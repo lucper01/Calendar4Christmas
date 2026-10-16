@@ -339,9 +339,21 @@
   updateDemoButton();
   renderGrid();
 
-  // Calendar transitions and countdown also update when the tab regains focus.
-  setInterval(() => { renderGrid(); }, 60000);
-  document.addEventListener("visibilitychange", () => { if (!document.hidden) renderGrid(); });
+  // Keep the countdown live without recreating focused calendar buttons every second.
+  let lastParisDay = JSON.stringify(parisDate());
+  setInterval(() => {
+    const current = parisDate();
+    const key = JSON.stringify(current);
+    if (key !== lastParisDay) {
+      lastParisDay = key;
+      renderGrid();
+    } else {
+      updateCountdown(current);
+    }
+  }, 1000);
+  document.addEventListener("visibilitychange", () => {
+    if (!document.hidden) { lastParisDay = JSON.stringify(parisDate()); renderGrid(); }
+  });
 
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     window.addEventListener("load", () => navigator.serviceWorker.register("./sw.js").catch(() => {}));
