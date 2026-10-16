@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10342e">
+  <meta name="description" content="24 jours, 24 surprises scientifiques : un calendrier de l'Avent interactif entre Noël, découvertes et curiosité.">
+  <meta property="og:title" content="Calendar4Christmas — Le calendrier de l'Avent des scientifiques">
+  <meta property="og:description" content="Un Noël très curieux : ouvre une case par jour et découvre la science autrement.">
+  <meta property="og:type" content="website">
+  <link rel="icon" type="image/svg+xml" href="./assets/favicon.svg">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500,0,1;9..144,600,0,1;9..144,700,0,1&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+  <script defer src="./surprises.js"></script>
+  <script defer src="./app.js"></script>
+  <title>Calendar4Christmas | Un Noël très curieux</title>
+</head>
+<body>
+  <div class="snowfall" aria-hidden="true"></div>
+  <div class="lights" aria-hidden="true">
+    <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+  </div>
+  <div class="site-shell">
+    <header class="site-header">
+      <a class="brand" href="#accueil" aria-label="Calendar4Christmas, accueil">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 64 64" fill="none"><path d="M23 8h18M27 8v19L13 49c-3 5 0 8 6 8h26c6 0 9-3 6-8L37 27V8" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/><path d="m18 43 28 0 7 10-4 5H16l-4-5 6-10Z" fill="#e5b86d"/><path d="m30 17 4-7 4 7-4 1-4-1Z" fill="#f9e8ba"/><circle cx="26" cy="48" r="2" fill="#792a32"/><circle cx="39" cy="51" r="3" fill="#792a32"/></svg>
+        </span>
+        <span class="brand-text">Calendar<span>4</span>Christmas <small>LE LABO DE NOËL</small></span>
+      </a>
+      <nav class="header-actions" aria-label="Options du calendrier">
+        <span class="edition">ÉDITION <strong>2026</strong></span>
+        <button class="icon-button" id="sound-toggle" type="button" aria-label="Activer les sons" aria-pressed="false" title="Activer les sons">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-waves" d="M15 9a4 4 0 0 1 0 6m3-9a8 8 0 0 1 0 12"/><path class="sound-slash" d="m16 9 5 6m0-6-5 6"/></svg>
+        </button>
+        <button class="preview-toggle" id="preview-toggle" type="button" aria-pressed="false"><span class="preview-dot"></span><span id="preview-label">Mode démo</span></button>
+      </nav>
+    </header>
+
+    <main id="accueil">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <div class="eyebrow"><span class="eyebrow-star">✳</span> DÉCEMBRE 2026 <span class="eyebrow-line"></span> UN NOËL TRÈS CURIEUX</div>
+          <h1 id="hero-title">Cette année,<br>la science se met<br><em>sur son 31.</em><span class="hero-spark" aria-hidden="true">✦</span></h1>
+          <p>24 petites portes. Un concentré de découvertes, de quiz improbables et de défis de labo. Chaque jour, un peu de magie… et beaucoup de curiosité.</p>
+          <div class="hero-cta">
+            <a class="main-button" href="#calendrier">Découvrir le calendrier <span aria-hidden="true">↘</span></a>
+            <span class="cta-caption">À consommer sans modération scientifique.</span>
+          </div>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+          <div class="art-star art-star-a">✦</div><div class="art-star art-star-b">✧</div><div class="art-star art-star-c">✳</div>
+          <div class="art-bubble bubble-one">?</div><div class="art-bubble bubble-two">✻</div><div class="art-bubble bubble-three">✦</div>
+          <div class="hanging-line"></div>
+          <div class="ornament"><div class="ornament-top"></div><div class="ornament-inner">
+            <svg viewBox="0 0 240 260" fill="none"><path d="M106 46v54l-49 82c-10 16-2 27 17 27h92c19 0 27-11 17-27l-49-82V46" stroke="#fbeecf" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/><path d="M89 46h62" stroke="#fbeecf" stroke-width="10" stroke-linecap="round"/><path d="M68 167c33 14 76-14 107 0l15 29c5 9-3 15-16 15H66c-13 0-21-6-16-15l18-29Z" fill="#f7d39b"/><circle cx="96" cy="183" r="8" fill="#b83b45"/><circle cx="142" cy="194" r="6" fill="#b83b45"/><circle cx="125" cy="171" r="4" fill="#317b63"/><path d="m119 12 7 17 17 7-17 7-7 17-7-17-17-7 17-7 7-17Z" fill="#f6db9d"/><path d="M82 140c19-12 56-15 77 0" stroke="#fbeecf" stroke-width="5" stroke-linecap="round" stroke-dasharray="4 10"/></svg>
+          </div></div>
+          <div class="hero-art-label">FORMULE SECRÈTE<br><strong>24 × CURIOSITÉ</strong></div>
+          <span class="art-badge">100%<br>science</span>
+        </div>
+      </section>
+
+      <section class="status-board" aria-label="Progression du calendrier">
+        <div class="status-note"><span class="status-spark">✶</span><div><span class="micro">MESSAGE DU PÔLE NORD</span><strong id="status-message">Le laboratoire prépare ses surprises…</strong></div></div>
+        <div class="status-stat"><span class="micro">CASES DÉCOUVERTES</span><strong><span id="opened-count">0</span><span class="muted-stat"> / 24</span></strong></div>
+        <div class="status-stat"><span class="micro" id="countdown-caption">AVANT LE PREMIER CADEAU</span><strong id="countdown">-- : -- : --</strong></div>
+        <div class="progress-track" aria-label="Progression"><span id="progress-fill"></span></div>
+      </section>
+
+      <section class="calendar-section" id="calendrier" aria-labelledby="calendar-title">
+        <div class="section-heading">
+          <div><div class="section-kicker">✦ &nbsp; VOTRE RENDEZ-VOUS SCIENTIFIQUE</div><h2 id="calendar-title">Le calendrier <em>des curiosités.</em></h2></div>
+          <p>Choisis une case, laisse-toi surprendre.<br>Les surprises s'ouvrent du 1<sup>er</sup> au 24 décembre.</p>
+        </div>
+        <div class="calendar-frame">
+          <div class="frame-rail frame-rail-top" aria-hidden="true"><span>✦</span><span>✦</span><span>✦</span></div>
+          <div class="calendar-grid" id="calendar-grid" aria-label="Les 24 cases du calendrier de l'Avent"></div>
+          <div class="frame-rail frame-rail-bottom" aria-hidden="true"><span>✳</span><span>✦</span><span>✳</span></div>
+        </div>
+        <div class="calendar-legend"><span><i class="legend-dot legend-ready"></i> À découvrir</span><span><i class="legend-dot legend-opened"></i> Découverte</span><span><i class="legend-dot legend-locked"></i> Encore un peu de patience</span></div>
+      </section>
+
+      <section class="lower-section" aria-labelledby="how-title">
+        <div class="info-card info-card-large"><div class="info-icon">✴</div><div><span class="micro">LA RECETTE DU BONHEUR</span><h3 id="how-title">Un peu de Noël.<br><em>Beaucoup de neurones.</em></h3><p>Chaque fenêtre révèle une surprise puisée dans un assortiment de quiz, faits étonnants et petites expériences. Reviens chaque jour : ton aventure se conserve sur cet appareil.</p></div></div>
+        <div class="info-card info-card-small"><div class="info-icon gift-icon">🎁</div><span class="micro">POUR LES CURIEUX IMPATIENTS</span><h3>Tu veux essayer<br>avant décembre ?</h3><p>Active le mode démo en haut de la page : les 24 fenêtres deviennent accessibles, sans altérer ta progression officielle.</p></div>
+      </section>
+    </main>
+
+    <footer class="site-footer"><div class="footer-brand">Calendar<span>4</span>Christmas <span aria-hidden="true">✦</span></div><p>Fait avec de la curiosité, de la rigueur et une pointe de cannelle.</p><span>© 2026 · L'AVENT DE LA SCIENCE</span></footer>
+  </div>
+
+  <dialog class="surprise-dialog" id="surprise-dialog" aria-labelledby="dialog-title">
+    <div class="dialog-card">
+      <button class="dialog-close" id="dialog-close" type="button" aria-label="Fermer la surprise">×</button>
+      <div class="dialog-stars" aria-hidden="true">✦ &nbsp; ✧ &nbsp; ✦</div>
+      <span class="dialog-day" id="dialog-day">CASE 01 · 24</span>
+      <div class="dialog-illustration" id="dialog-illustration" aria-hidden="true">🔬</div>
+      <div class="dialog-category" id="dialog-category">LE SAVIEZ-VOUS ?</div>
+      <h2 id="dialog-title">Surprise !</h2>
+      <p id="dialog-body"></p>
+      <div class="quiz-area" id="quiz-area" hidden></div>
+      <p class="dialog-explanation" id="dialog-explanation" hidden></p>
+      <a class="source-link" id="source-link" target="_blank" rel="noopener noreferrer" hidden>Lire la source scientifique ↗</a>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="reroll-button" type="button">✦ Autre surprise</button>
+        <button class="main-button dialog-done" id="dialog-done" type="button">C'est dans la boîte ! <span aria-hidden="true">↗</span></button>
+      </div>
+    </div>
+  </dialog>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
+</body>
+</html>
