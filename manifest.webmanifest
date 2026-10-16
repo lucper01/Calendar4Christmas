@@ -1,0 +1,20 @@
+{
+  "name": "Calendar4Christmas — Le labo de Noël",
+  "short_name": "Calendar4Christmas",
+  "description": "Un calendrier de l'Avent interactif pour découvrir la recherche scientifique en s'amusant.",
+  "lang": "fr",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#071e1c",
+  "theme_color": "#10342e",
+  "icons": [
+    {
+      "src": "./assets/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
