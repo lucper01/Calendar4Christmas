@@ -109,6 +109,11 @@ async function manifest(env) {
   try { const parsed = await object.json(); return parsed?.year === YEAR && Array.isArray(parsed.days) ? parsed : null; }
   catch { return null; }
 }
+function localizedValid(value,max,required=false) {
+  if(typeof value==="string")return value.length<=max && (!required || value.trim().length>0);
+  if(!value || Array.isArray(value) || typeof value!=="object" || Object.keys(value).some(k=>k!=="fr" && k!=="en"))return false;
+  return ["fr","en"].every(k=>typeof value[k]==="string" && value[k].length<=max && (!required || value[k].trim().length>0));
+}
 function manifestErrors(data) {
   if (!data || data.year !== YEAR || !Array.isArray(data.days) || data.days.length !== 24) return "Le calendrier doit contenir exactement 24 jours pour 2026.";
   const days=new Set(), ids=new Set();
@@ -117,14 +122,15 @@ function manifestErrors(data) {
     days.add(entry.day);
     if (!["album","science"].includes(entry.type)) return "Type de case invalide.";
     if (entry.type === "album") {
-      if (typeof entry.title !== "string" || entry.title.length > 160 || !entry.title.trim()) return "Titre d'album manquant.";
-      if (typeof entry.description !== "string" || entry.description.length > 2000) return "Description d'album invalide.";
+      if (!localizedValid(entry.title,160,true)) return "Titre bilingue manquant ou invalide.";
+      if (!localizedValid(entry.description,2000)) return "Description bilingue invalide.";
       if (!Array.isArray(entry.media) || !entry.media.length || entry.media.length > 30) return "Album sans médias ou trop volumineux.";
       for(const item of entry.media) {
         if(!validId(item.id) || ids.has(item.id)) return "ID média invalide ou dupliqué.";
         if(!["image","video"].includes(item.type)) return "Type média invalide.";
         if(typeof item.filename !== "string" || !/\.(jpg|jpeg|png|webp|mp4)$/i.test(item.filename) || item.filename.length > 180) return "Nom de fichier invalide.";
-        if(item.caption != null && (typeof item.caption !== "string" || item.caption.length > 500)) return "Légende trop longue.";
+        if(item.caption != null && !localizedValid(item.caption,500)) return "Légende invalide.";
+        if(item.alt != null && !localizedValid(item.alt,250)) return "Texte alternatif invalide.";
         ids.add(item.id);
       }
     }
