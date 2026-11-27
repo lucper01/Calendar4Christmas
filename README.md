@@ -2,6 +2,12 @@
 
 Un calendrier de l'Avent scientifique, immersif, interactif et responsive. **24 cases** du 1er au 24 décembre **2026**, **47 surprises** sélectionnées aléatoirement (quiz, faits, défis et idées reçues) et une direction artistique Noël rouge, sapin et doré.
 
+## Langues
+
+L'interface du calendrier, son écran de code d'accès et les **47 surprises scientifiques** sont disponibles en **français et en anglais**. Le sélecteur `FR / EN` apparaît dès l'accueil et sur le calendrier. La préférence est enregistrée sur cet appareil (localStorage), sans compte.
+
+> Le site actuel utilise encore un contrôle d'accès côté navigateur. **Les photos privées ne sont pas dans GitHub**. Une version avec vérification serveur, Worker Cloudflare, bucket R2 privé et albums bilingues est préparée séparément sur la branche `feature/cloudflare-private-albums` et sera déployée lorsque le stockage et les secrets Cloudflare auront été configurés.
+
 ## Fonctionnalités
 
 - 24 fenêtres qui se débloquent à minuit dans le fuseau **Europe/Paris**.
