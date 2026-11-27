@@ -9,7 +9,7 @@
   const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000;
   const ITERATIONS = 175000;
   const SALT_HEX = "20cbfdd6496a1dc192f93009b26be565";
-  const EXPECTED_HEX = "6427e1c77ff3a54f7375348c239100da1ecdc8612c81489997d1e1c97c7259cd";
+  const EXPECTED_HEX = "6fbf533cb1f1af4ba04b4286c40b869e6f2a5581272b9f9221b8f5e2416108b2";
 
   const gate = document.getElementById("access-gate");
   const form = document.getElementById("access-form");
