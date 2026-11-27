@@ -1,0 +1,4 @@
+# Cloudflare Access is configured separately in the Cloudflare dashboard.
+# Only the organiser needs this independent upload token.
+# Generate a random 64-character value, e.g. with a password manager.
+ADMIN_TOKEN=REPLACE_WITH_64_RANDOM_CHARACTERS
