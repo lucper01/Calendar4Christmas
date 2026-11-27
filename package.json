@@ -1,0 +1,16 @@
+{
+  "name": "calendar4christmas",
+  "private": true,
+  "version": "2.1.0",
+  "type": "module",
+  "description": "Bilingual Advent calendar: Cloudflare Access, M2CSGA frontend gate and private R2 photo albums",
+  "scripts": {
+    "check": "node --check src/worker.js && node --check public/access.js && node --check public/app.js && node --check public/i18n.js && node --check public/secure-client.js && node --check public/admin.js && node --check public/surprises.en.js",
+    "test": "node tests/smoke.mjs",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
