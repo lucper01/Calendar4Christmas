@@ -1,0 +1,15 @@
+{
+  "name": "calendar4christmas",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A bilingual, secure Advent calendar on Cloudflare Workers + R2",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "check": "node --check src/worker.js && node --check public/access.js && node --check public/app.js && node --check public/i18n.js && node --check public/secure-client.js && node --check public/surprises.en.js && node --check public/admin.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
