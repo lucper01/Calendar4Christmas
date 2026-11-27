@@ -15,6 +15,14 @@ Un calendrier de l'Avent scientifique, immersif, interactif et responsive. **24 
 - **PWA** installable dans les navigateurs compatibles et cache hors ligne pour les fichiers essentiels.
 - **Aucun compte**, aucun service tiers pour les surprises et aucune donnée personnelle transmise à un serveur. Les polices Google sont optionnelles et chargées depuis Google lorsque la connexion l'autorise.
 
+## Accès temporaire par invitation
+
+Le calendrier présente actuellement un écran d'accès festif avant d'afficher les 24 cases. Le code d'invitation convenu est vérifié par `access.js` : le mot de passe n'est pas inséré en clair dans `index.html`, et sa vérification utilise une empreinte PBKDF2-SHA256 avec sel. Une session de 12 heures est conservée dans `sessionStorage` ; un bouton **Verrouiller** permet de revenir à l'accueil. Un délai de 30 secondes est appliqué après cinq erreurs consécutives, uniquement dans la page.
+
+**Attention : ce n'est qu'un contrôle de présentation côté navigateur, pas un contrôle d'accès sécurisé.** Le dépôt et les fichiers GitHub Pages restent publics et peuvent être lus directement, y compris `surprises.js`, les éventuelles photos statiques et l'empreinte du code. Une personne connaissant les outils de développement peut contourner l'écran, ou attaquer le code hors ligne. Aucune photo privée/confidentielle ne doit être déposée dans ce dépôt public en supposant qu'elle restera secrète.
+
+Pour rendre les photos réellement privées avant la date prévue : utiliser un hébergement de fichiers privé, un serveur validant l'accès et une API qui livre seulement les images autorisées pour la journée. L'écran actuel peut être conservé comme présentation festive, mais n'assure pas cette sécurité.
+
 ## Lancer en local
 
 Pas de compilation ni de dépendance npm.
