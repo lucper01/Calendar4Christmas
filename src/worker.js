@@ -274,7 +274,8 @@ export default {
       if(url.pathname.startsWith("/api/")) return await handleApi(request,env);
       if(request.method!=="GET" && request.method!=="HEAD") return fail(405,"Méthode non autorisée.");
       if(!publicFiles.has(url.pathname) || !env.ASSETS) return fail(404,"Page introuvable.");
-      const result=await env.ASSETS.fetch(request);
+      const staticRequest = url.pathname==="/" ? new Request(new URL("/index.html",url),request) : request;
+      const result=await env.ASSETS.fetch(staticRequest);
       const headers=new Headers(result.headers);
       headers.set("X-Content-Type-Options","nosniff");
       headers.set("Referrer-Policy","same-origin");
