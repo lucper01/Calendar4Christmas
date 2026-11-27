@@ -13,16 +13,40 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500,0,1;9..144,600,0,1;9..144,700,0,1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=2">
+  <script defer src="./access.js?v=2"></script>
   <script defer src="./surprises.js"></script>
   <script defer src="./app.js"></script>
   <title>Calendar4Christmas | Un Noël très curieux</title>
 </head>
-<body>
+<body class="access-locked">
   <div class="snowfall" aria-hidden="true"></div>
   <div class="lights" aria-hidden="true">
     <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
   </div>
+
+  <section class="access-gate" id="access-gate" aria-labelledby="access-title">
+    <div class="gate-decoration gate-decoration-one" aria-hidden="true">✳</div>
+    <div class="gate-decoration gate-decoration-two" aria-hidden="true">✦</div>
+    <div class="gate-panel">
+      <div class="gate-mini-brand">✦ &nbsp; CALENDAR4CHRISTMAS &nbsp; ✦</div>
+      <div class="gate-emblem" aria-hidden="true"><span>🎄</span><i>✧</i></div>
+      <div class="gate-eyebrow">ÉDITION 2026 · INVITATION PRIVILÉGIÉE</div>
+      <h1 id="access-title">La magie est<br><em>sous clé.</em></h1>
+      <p class="gate-description">Un petit secret avant les grandes découvertes. Entre le code transmis par l'organisateur pour accéder au calendrier de l'Avent du laboratoire.</p>
+      <form id="access-form" class="gate-form" autocomplete="off">
+        <label for="access-code">TON CODE D'ACCÈS</label>
+        <div class="gate-input-wrap">
+          <input id="access-code" name="invitation" type="password" placeholder="Code d'invitation" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="40" required aria-describedby="access-error">
+          <button type="button" id="access-visibility" class="gate-visibility" aria-label="Afficher ou masquer le code" aria-pressed="false">Afficher</button>
+        </div>
+        <p id="access-error" class="access-error" aria-live="polite" role="status"></p>
+        <button id="access-submit" class="gate-submit" type="submit">Ouvrir le laboratoire <span aria-hidden="true">↗</span></button>
+      </form>
+      <p class="gate-footnote"><span aria-hidden="true">❄</span> 24 jours. 24 fenêtres. Une infinité de curiosités.</p>
+    </div>
+  </section>
+
   <div class="site-shell">
     <header class="site-header">
       <a class="brand" href="#accueil" aria-label="Calendar4Christmas, accueil">
@@ -33,6 +57,7 @@
       </a>
       <nav class="header-actions" aria-label="Options du calendrier">
         <span class="edition">ÉDITION <strong>2026</strong></span>
+        <button class="lock-button" id="lock-again" type="button" title="Verrouiller le calendrier"><span aria-hidden="true">✦</span> Verrouiller</button>
         <button class="icon-button" id="sound-toggle" type="button" aria-label="Activer les sons" aria-pressed="false" title="Activer les sons">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M11 5 6 9H3v6h3l5 4V5Z"/><path class="sound-waves" d="M15 9a4 4 0 0 1 0 6m3-9a8 8 0 0 1 0 12"/><path class="sound-slash" d="m16 9 5 6m0-6-5 6"/></svg>
         </button>
