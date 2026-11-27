@@ -1,0 +1,5 @@
+# Place the real values only in local .dev.vars or Cloudflare encrypted Secrets.
+# Never commit the actual access code, session secret, admin token or private photographs.
+ACCESS_CODE=REPLACE_WITH_INVITATION_CODE
+SESSION_SECRET=REPLACE_WITH_A_LONG_RANDOM_64_CHARACTER_SECRET
+ADMIN_TOKEN=REPLACE_WITH_A_DIFFERENT_LONG_RANDOM_64_CHARACTER_TOKEN
