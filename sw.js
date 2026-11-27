@@ -1,5 +1,5 @@
 /* Minimal offline support for the static Advent calendar. */
-const CACHE = "calendar4christmas-2026-v2-access";
+const CACHE = "calendar4christmas-2026-v3-access";
 const CORE = ["./", "./index.html", "./styles.css", "./access.js", "./app.js", "./surprises.js", "./manifest.webmanifest", "./assets/favicon.svg"];
 self.addEventListener("install", event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting()));
