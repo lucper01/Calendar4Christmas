@@ -5,7 +5,7 @@
 (() => {
   "use strict";
 
-  const SESSION_KEY = "calendar4christmas-access-session-v1";
+  const SESSION_KEY = "calendar4christmas-access-session-v2";
   const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000;
   const ITERATIONS = 175000;
   const SALT_HEX = "20cbfdd6496a1dc192f93009b26be565";
