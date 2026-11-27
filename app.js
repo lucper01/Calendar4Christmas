@@ -9,6 +9,12 @@
   const TYPE_NAMES = {quiz:"QUIZ DU LUTIN", fact:"LE SAVIEZ-VOUS ?", challenge:"DÉFI DU LABORATOIRE", myth:"VRAI OU FAUX ?"};
   const surprises = Array.isArray(window.SURPRISES) ? window.SURPRISES : [];
   const $ = id => document.getElementById(id);
+  const t = (key,vars) => window.C4C_I18N?.t(key,vars) || key;
+  const localizedSurprise = index => {
+    const original=surprises[index];
+    const translated=window.C4C_I18N?.lang==="en" ? window.C4C_SURPRISES_EN?.[index] : null;
+    return original ? {...original,...(translated||{})} : null;
+  };
   const state = readState();
   let demo = false;
   let activeDay = null;
@@ -63,7 +69,7 @@
   function draw(day, reroll = false) {
     if (!surprises.length) return null;
     const existing = Number(state.picks[day]);
-    if (!reroll && Number.isInteger(existing) && existing >= 0 && existing < surprises.length) return surprises[existing];
+    if (!reroll && Number.isInteger(existing) && existing >= 0 && existing < surprises.length) return localizedSurprise(existing);
     const occupied = new Set(Object.values(state.picks).map(Number).filter(Number.isInteger));
     const fresh = surprises.map((_, i) => i).filter(i => !occupied.has(i) && !state.seen.includes(i));
     const unoccupied = surprises.map((_, i) => i).filter(i => !occupied.has(i));
@@ -74,7 +80,7 @@
     state.picks[day] = index;
     if (!state.seen.includes(index)) state.seen.push(index);
     persist();
-    return surprises[index];
+    return localizedSurprise(index);
   }
 
   function setStatus() {
@@ -84,11 +90,11 @@
     $("progress-fill").style.width = (count / 24 * 100) + "%";
     $("progress-fill").parentElement.setAttribute("aria-label", count + " cases découvertes sur 24");
 
-    let message = "Les lutins peaufinent les protocoles.";
-    if (demo) message = "Mode démo : les 24 cases sont accessibles !";
-    else if (today.year > YEAR || (today.year === YEAR && today.month === 12 && today.day >= 24)) message = "Toutes les surprises sont au rendez-vous !";
+    let message = t("message_before");
+    if (demo) message = t("message_demo");
+    else if (today.year > YEAR || (today.year === YEAR && today.month === 12 && today.day >= 24)) message = t("message_complete");
     else if (today.year === YEAR && today.month === 12 && today.day >= 1) {
-      message = state.opened.includes(today.day) ? "C'est noté ! À demain pour la suite." : "Une nouvelle fenêtre t'attend aujourd'hui !";
+      message = state.opened.includes(today.day) ? t("message_opened_today") : t("message_today");
     }
     $("status-message").textContent = message;
     updateCountdown(today);
@@ -98,13 +104,13 @@
     let target, label;
     if (today.year < YEAR || (today.year === YEAR && today.month < 12)) {
       target = new Date("2026-11-30T23:00:00Z");
-      label = "AVANT LE PREMIER CADEAU";
+      label = t("countdown_first");
     } else if (today.year === YEAR && today.month === 12 && today.day < 24) {
       target = new Date(Date.UTC(YEAR, 11, today.day, 23, 0, 0));
-      label = "PROCHAINE SURPRISE DANS";
+      label = t("countdown_next");
     } else {
       $("countdown").textContent = "24 / 24";
-      $("countdown-caption").textContent = "LA MAGIE EST COMPLÈTE";
+      $("countdown-caption").textContent = t("countdown_complete");
       return;
     }
     const remaining = Math.max(0, target.getTime() - Date.now());
@@ -135,18 +141,20 @@
     const el = document.createElement("button");
     el.type = "button";
     el.className = "door" + (opened ? " is-opened" : "") + (!unlocked ? " is-locked" : "") + (preview ? " is-preview" : "") + (current ? " is-current" : "");
-    el.setAttribute("aria-label", "Jour " + day + " décembre : " + (opened ? "découvert" : !unlocked ? "verrouillé" : preview ? "aperçu disponible" : "à découvrir"));
-    el.title = opened ? "Redécouvrir la case " + day : unlocked ? "Ouvrir la case " + day : "Disponible le " + day + " décembre 2026";
-    const icon = opened ? surprises[Number(state.picks[day])]?.emoji || "✦" : ICONS[(day * 7 + 3) % ICONS.length];
-    const status = opened ? "DÉCOUVERT" : !unlocked ? "FERMÉ" : preview ? "APERÇU" : "OUVRIR";
+    const labelState = opened?t("discovered"):!unlocked?t("closed"):preview?t("preview"):t("open");
+    el.setAttribute("aria-label", (window.C4C_I18N?.lang==="en"?"Day ":"Jour ")+day+" "+(window.C4C_I18N?.lang==="en"?"December":"décembre")+" : "+labelState);
+    el.title=(window.C4C_I18N?.lang==="en"?"Day ":"Jour ")+day+" · "+labelState;
+    const icon = opened ? (window.C4C_SECURE?.getDay(day)?.type==="album"?"📷":surprises[Number(state.picks[day])]?.emoji || "✦") : ICONS[(day * 7 + 3) % ICONS.length];
+    const status=opened?t("discovered"):!unlocked?t("closed"):preview?t("preview"):t("open");
     el.innerHTML = '<span class="door-number"></span><span class="door-date">DÉC.</span><span class="door-icon" aria-hidden="true"></span><span class="door-status"></span>' + (day === 24 ? '<span class="door-feature" aria-hidden="true">✦</span>' : "");
     el.querySelector(".door-number").textContent = String(day).padStart(2,"0");
+    el.querySelector(".door-date").textContent=t("december");
     el.querySelector(".door-icon").textContent = icon;
     el.querySelector(".door-status").textContent = status;
     el.addEventListener("click", () => {
       if (!eligible(day)) {
         play("locked");
-        showToast("La case " + day + " s'ouvrira le " + day + " décembre 2026. Le Père Noël veille !");
+        showToast(t("locked_day",{day}));
         return;
       }
       openDoor(day);
@@ -184,7 +192,7 @@
       });
       const explanation = $("dialog-explanation");
       explanation.hidden = false;
-      explanation.textContent = (index === item.correct ? "Bravo ! " : "Pas tout à fait. ") + item.explanation;
+      explanation.textContent = (index === item.correct ? t("quiz_correct") : t("quiz_incorrect")) + item.explanation;
       if (!demo || officiallyUnlocked(day)) { state.answers[day] = index; persist(); }
       play(index === item.correct ? "correct" : "wrong");
     }
@@ -193,9 +201,9 @@
 
   function showSurprise(day, item) {
     if (!item) { showToast("Les surprises sont momentanément indisponibles."); return; }
-    $("dialog-day").textContent = "CASE " + String(day).padStart(2,"0") + " / 24";
+    $("dialog-day").textContent = t("day") + " " + String(day).padStart(2,"0") + " / 24";
     $("dialog-illustration").textContent = item.emoji;
-    $("dialog-category").textContent = TYPE_NAMES[item.type] || "SURPRISE SCIENTIFIQUE";
+    $("dialog-category").textContent = t(item.type) || TYPE_NAMES[item.type] || "SCIENCE";
     $("dialog-title").textContent = item.title;
     $("dialog-body").textContent = item.body;
     $("quiz-area").hidden = true;
@@ -210,7 +218,7 @@
     const source = $("source-link");
     if (item.source && /^https:\/\/doi\.org\//.test(item.source)) {
       source.href = item.source;
-      source.textContent = "Voir l'étude · " + (item.sourceLabel || "DOI") + " ↗";
+      source.textContent = t("source_label") + " · " + (item.sourceLabel || "DOI") + " ↗";
       source.hidden = false;
     } else {
       source.removeAttribute("href");
@@ -221,15 +229,30 @@
   function openDoor(day) {
     activeDay = day;
     const wasOpened = state.opened.includes(day);
-    const item = draw(day);
+    const album = window.C4C_SECURE?.getDay(day);
+    const isAlbum = album?.type==="album";
+    const item = isAlbum ? null : draw(day);
+    // Demo never changes official progress, and unreleased private photos stay private.
     if (officiallyUnlocked(day) && !wasOpened) {
       state.opened.push(day);
       state.opened.sort((a,b) => a-b);
       persist();
     }
-    showSurprise(day, item);
+    if (isAlbum) {
+      $("quiz-area").hidden=true;
+      $("reroll-button").hidden=true;
+      $("album-gallery").hidden=false;
+      $("dialog-category").textContent=t("secure_album");
+      $("dialog-title").textContent=t("loading");
+      $("dialog-body").textContent="";
+    } else {
+      $("reroll-button").hidden=false;
+      $("album-gallery").hidden=true;
+      showSurprise(day, item);
+    }
     renderGrid();
     $("surprise-dialog").showModal();
+    if(isAlbum) void window.C4C_SECURE.openAlbum(day);
     play("open");
     if (!wasOpened && !demo) confetti();
   }
@@ -280,14 +303,14 @@
   function updateSoundButton() {
     const button = $("sound-toggle");
     button.setAttribute("aria-pressed", String(state.sound));
-    const title = state.sound ? "Couper les sons" : "Activer les sons";
+    const title = state.sound ? t("sound_disable") : t("sound_enable");
     button.setAttribute("aria-label", title);
     button.title = title;
   }
 
   function updateDemoButton() {
     $("preview-toggle").setAttribute("aria-pressed", String(demo));
-    $("preview-label").textContent = demo ? "Quitter la démo" : "Mode démo";
+    $("preview-label").textContent = demo ? t("quit_demo") : t("demo");
   }
 
   function createSnow() {
@@ -312,14 +335,14 @@
     demo = !demo;
     updateDemoButton();
     renderGrid();
-    showToast(demo ? "Mode démo activé ! Les découvertes anticipées ne comptent pas dans la progression officielle." : "Mode démo désactivé : retour au calendrier réel.");
+    showToast(demo ? t("demo_on") : t("demo_off"));
   });
   $("sound-toggle").addEventListener("click", () => {
     state.sound = !state.sound;
     persist();
     updateSoundButton();
     play("correct");
-    showToast(state.sound ? "Petit carillon activé !" : "Ambiance silencieuse activée.");
+    showToast(state.sound ? t("sound_on") : t("sound_off"));
   });
   $("dialog-close").addEventListener("click", () => $("surprise-dialog").close());
   $("dialog-done").addEventListener("click", () => $("surprise-dialog").close());
@@ -334,6 +357,16 @@
     play("open");
   });
   $("surprise-dialog").addEventListener("close", () => { activeDay = null; });
+  window.addEventListener("c4c:calendar", renderGrid);
+  window.addEventListener("c4c:language", () => {
+    updateSoundButton();
+    updateDemoButton();
+    renderGrid();
+    if(activeDay!=null && !window.C4C_SECURE?.getDay(activeDay)?.type) {
+      const index=Number(state.picks[activeDay]);
+      if(Number.isInteger(index) && surprises[index]) showSurprise(activeDay,localizedSurprise(index));
+    }
+  });
   createSnow();
   updateSoundButton();
   updateDemoButton();
