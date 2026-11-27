@@ -178,13 +178,16 @@ async function api(request,env){
       const file=calendar.days.flatMap(d=>d.media||[]).find(m=>m.id===upload[1]);
       if(!file)return error(404,"ID de média inconnu.");
       const max=24*1024*1024;
-      const length=Number(request.headers.get("Content-Length")||0);
-      if(!Number.isInteger(length)||length<1||length>max)return error(413,"Fichier trop volumineux (24 Mio max).");
+      const provided=request.headers.get("Content-Length");
+      const declared=provided===null?null:Number(provided);
+      if(declared!==null && (!Number.isInteger(declared)||declared<1||declared>max))return error(413,"Fichier trop volumineux (24 Mio max).");
       const mime=request.headers.get("Content-Type")?.split(";")[0]?.toLowerCase();
       const good=file.type==="video"?["video/mp4"]:["image/jpeg","image/png","image/webp"];
       if(!good.includes(mime))return error(415,"Type de média invalide.");
       const buffer=await request.arrayBuffer();
-      if(buffer.byteLength!==length)return error(400,"Longueur invalide.");
+      const length=buffer.byteLength;
+      if(length<1 || length>max)return error(413,"Fichier trop volumineux (24 Mio max).");
+      if(declared!==null && length!==declared)return error(400,"Longueur invalide.");
       await env.MEDIA.put("media/"+file.id,buffer,{httpMetadata:{contentType:mime}});
       return send({ok:true,id:file.id,bytes:length});
     }
