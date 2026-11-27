@@ -5,6 +5,7 @@
 (() => {
   "use strict";
 
+  const t=(key,vars)=>window.C4C_I18N?.t(key,vars)||key;
   const SESSION_KEY = "calendar4christmas-access-session-v2";
   const SESSION_LIFETIME_MS = 12 * 60 * 60 * 1000;
   const ITERATIONS = 175000;
@@ -74,7 +75,7 @@
     gate.hidden = false;
     field.value = "";
     field.type = "password";
-    showCode.textContent = "Afficher";
+    showCode.textContent = t("reveal");
     showCode.setAttribute("aria-pressed", "false");
     feedback.textContent = "";
     field.focus();
@@ -86,19 +87,19 @@
   form.addEventListener("submit", async event => {
     event.preventDefault();
     if (Date.now() < cooldownUntil) {
-      feedback.textContent = "Quelques secondes de patience avant une nouvelle tentative.";
+      feedback.textContent = t("too_many");
       return;
     }
 
     const candidate = field.value.trim();
     if (!candidate) {
-      feedback.textContent = "Saisis ton code pour entrer dans le labo.";
+      feedback.textContent = t("awaiting_code");
       field.focus();
       return;
     }
 
     submit.disabled = true;
-    submit.textContent = "Vérification…";
+    submit.textContent = t("verifying");
     feedback.textContent = "";
     try {
       if (await verify(candidate)) {
@@ -112,17 +113,17 @@
         if (failedAttempts >= 5) {
           cooldownUntil = Date.now() + 30000;
           failedAttempts = 0;
-          feedback.textContent = "Trop de tentatives : réessaie dans 30 secondes.";
+          feedback.textContent = t("too_many");
         } else {
-          feedback.textContent = "Ce code n'ouvre pas la porte. Réessaie !";
+          feedback.textContent = t("incorrect_code");
         }
         field.focus();
       }
     } catch {
-      feedback.textContent = "Impossible de vérifier le code ici. Ouvre le site via HTTPS.";
+      feedback.textContent = t("network_error");
     } finally {
       submit.disabled = false;
-      submit.innerHTML = "Ouvrir le laboratoire <span aria-hidden=\"true\">↗</span>";
+      submit.innerHTML = '<span data-i18n="enter">' + t("enter") + '</span> <span aria-hidden="true">↗</span>';
     }
   });
 
@@ -131,10 +132,11 @@
   showCode.addEventListener("click", () => {
     const visible = field.type === "password";
     field.type = visible ? "text" : "password";
-    showCode.textContent = visible ? "Masquer" : "Afficher";
+    showCode.textContent = visible ? t("conceal") : t("reveal");
     showCode.setAttribute("aria-pressed", String(visible));
     field.focus();
   });
 
+  window.addEventListener("c4c:language",()=>{showCode.textContent=field.type==="password"?t("reveal"):t("conceal");});
   lockAgain.addEventListener("click", relock);
 })();
