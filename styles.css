@@ -56,3 +56,23 @@ body.access-locked .confetti-layer{display:none!important}
 @media(max-width:650px){.access-gate{padding:65px 15px 30px}.gate-panel{padding:30px 27px 32px}.gate-emblem{width:80px;height:80px}.gate-emblem span{font-size:43px}.gate-panel h1{font-size:52px}.gate-description{font-size:12px}.lock-button{padding:8px 9px;font-size:0}.lock-button span{font-size:15px;margin:0}}
 @media(max-width:390px){.gate-panel{padding:27px 21px 28px}.gate-mini-brand{font-size:9px}.gate-panel h1{font-size:46px}.gate-form label{font-size:9px}}
 @media(prefers-reduced-motion:reduce){.gate-decoration{animation:none}.gate-submit,.gate-input-wrap{transition:none}}
+
+/* FR / EN switch; same treatment on the welcome screen and inside the app. */
+.language-picker{display:inline-flex;align-items:center;justify-content:center;gap:4px;padding:4px 7px;border:1px solid rgba(244,212,164,.34);border-radius:999px;background:rgba(2,24,20,.2);font:800 11px/1 var(--body);color:var(--gold);white-space:nowrap}
+.language-picker button{min-width:30px;height:28px;background:transparent;color:#c2c6b7;border:0;border-radius:99px;font:800 10px var(--body);letter-spacing:.08em;transition:background .15s,color .15s}
+.language-picker button[aria-pressed=true]{background:var(--gold);color:#12372c}
+.language-picker button:hover:not([aria-pressed=true]){color:white;background:rgba(255,255,255,.07)}
+.gate-panel>.language-picker{position:relative;z-index:2;margin:0 auto 17px}
+.header-actions>.language-picker{margin-right:6px}
+.album-gallery{margin:20px auto 16px;max-width:445px}
+.album-gallery[hidden]{display:none!important}
+.album-stage{position:relative;display:grid;place-items:center;min-height:170px;max-height:min(48vh,420px);background:rgba(0,0,0,.23);border:1px solid rgba(255,234,195,.25);border-radius:13px;overflow:hidden}
+.album-media{display:block;max-width:100%;max-height:min(48vh,420px);width:auto;height:auto;object-fit:contain}
+.album-caption{color:#ede0c7;font:italic 14px/1.6 var(--display);margin:13px auto;text-align:center}
+.album-nav{display:flex;align-items:center;justify-content:center;gap:25px;margin:12px auto 0}
+.album-arrow{width:40px;height:40px;display:grid;place-items:center;border:1px solid rgba(248,217,161,.4);border-radius:50%;color:var(--cream);background:rgba(255,255,255,.06);font-size:26px}
+.album-arrow:hover{border-color:var(--gold);background:rgba(255,255,255,.13)}
+.album-count{color:var(--gold-light);font:700 12px var(--body);min-width:70px}
+.album-media-type{font:800 9px/1.4 var(--body);letter-spacing:.17em;color:#bfcaba;text-transform:uppercase}
+@media(max-width:650px){.header-actions{flex-wrap:wrap;justify-content:flex-end}.header-actions>.language-picker{margin-right:0}.gate-panel>.language-picker{margin-bottom:15px}.album-stage{max-height:50vh}.album-media{max-height:50vh}}
+@media(max-width:390px){.brand-mark{display:none}.brand-text{font-size:13px}.header-actions{gap:4px}.header-actions>.language-picker{padding:2px 5px}.header-actions>.language-picker button{min-width:25px;height:25px}}
