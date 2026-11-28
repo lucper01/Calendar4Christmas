@@ -54,7 +54,7 @@ if(released){
 }
 assert.equal((await call("/api/admin/manifest")).status,404);
 assert.equal((await call("/api/admin/media/m001",{method:"PUT",body:sample})).status,404);
-assert.equal((await call("/api/media/m001",{method:"PUT",body:sample})).status,405);
+assert.equal((await call("/api/media/m001",{method:"PUT",body:sample})).status,404);
 assert.equal((await call("/api/media/m001",{headers:{Range:"bytes=malformed"}})).status,released?416:404);
 const web=await call("/");
 assert.match(web.headers.get("content-security-policy"),/script-src 'self'/);
