@@ -246,7 +246,10 @@ async function adminApi(request,env,path,method,calendar){
     const id="m"+String(next).padStart(3,"0");
     const ext=allowedTypes[mime];
     // Preserve original filename for reference only, not for R2 object paths.
-    const original=(request.headers.get("X-Filename")||"").slice(0,150).replace(/[\\/\x00-\x1f]/g,"");
+    let original="";
+    try{original=decodeURIComponent(request.headers.get("X-Filename")||"");}
+    catch{original="uploaded-media";}
+    original=original.slice(0,150).replace(/[\\/\x00-\x1f]/g,"");
     const item={id,filename:id+ext,type:mime==="video/mp4"?"video":"image",
       original,caption:{fr:"",en:""},alt:{fr:original||"Photo du laboratoire",en:original||"Laboratory photo"}};
     await env.MEDIA.put(MEDIA_PREFIX+id+ext,bytes,{httpMetadata:{contentType:mime}});
