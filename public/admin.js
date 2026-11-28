@@ -67,7 +67,7 @@ function setWords(){
  $("admin-locked-message").textContent=t("Activez le mode démo avec triche depuis le calendrier, puis revenez ici.","Enable demo mode with triche in the calendar, then return here.");
  $("admin-locked-action").textContent=t("Revenir au calendrier","Return to calendar");
  $("admin-days-hint").title=t("Le contenu bonus automatique utilise la bibliothèque des 47 surprises scientifiques.","Automatic bonuses use the 47-science-surprise library.");
- if(manifest)renderAll();
+ if(manifest){writeForm();renderAll();}
 }
 function el(tag,className,text){
  const node=document.createElement(tag);if(className)node.className=className;
@@ -124,7 +124,20 @@ function renderSelected(){
    const remove=el("button","is-remove","×");
    remove.type="button";remove.title=t("Retirer de ce jour","Remove from day");
    remove.onclick=()=>{writeForm();day.media.splice(index,1);markDirty();renderAll()};
-   controls.append(remove);card.append(controls);grid.append(card);
+   controls.append(remove);card.append(controls);
+   const captions=el("div","admin-caption-fields");
+   const capFr=el("label","",t("Légende · FR","Caption · FR"));
+   const inputFr=el("input");inputFr.type="text";inputFr.maxLength=800;
+   inputFr.value=item.caption?.fr||"";
+   inputFr.addEventListener("input",()=>{item.caption.fr=inputFr.value;markDirty()});
+   capFr.append(inputFr);
+   const capEn=el("label","",t("Légende · EN","Caption · EN"));
+   const inputEn=el("input");inputEn.type="text";inputEn.maxLength=800;
+   inputEn.value=item.caption?.en||"";
+   inputEn.addEventListener("input",()=>{item.caption.en=inputEn.value;markDirty()});
+   capEn.append(inputEn);
+   captions.append(capFr,capEn);
+   card.append(captions);grid.append(card);
  });
 }
 function renderLibrary(){
