@@ -71,8 +71,8 @@
     const base=source[index];
     const translation=window.C4C_I18N?.lang==="en"?window.C4C_SURPRISES_EN?.[index]:null;
     return {...base,...(translation||{}),type:base.type==="quiz"?"quiz":"info",
-      title:base.title,body:translation?.body||base.body,
-      question:translation?.question||base.question};
+      title:translation?.title||base.title,body:translation?.body||base.body,
+      question:translation?.question||base.body};
   }
   function renderBonus(day){
     const area=make("section","daily-bonus");
@@ -81,7 +81,7 @@
     const isDefault=!currentAlbum?.bonus||currentAlbum.bonus.type==="surprise";
     const bonus=isDefault?scienceBonus(day):currentAlbum.bonus;
     if(bonus.type==="quiz"){
-      const question=localized(bonus.question)||bonus.title||bonus.body||t("quiz");
+      const question=localized(bonus.question)||bonus.body||bonus.title||t("quiz");
       area.append(make("h3","daily-bonus-heading",question));
       const opts=isDefault?bonus.options||[]:bonus.options?.[window.C4C_I18N?.lang||"fr"]||bonus.options?.fr||[];
       const container=make("div","daily-bonus-options");
