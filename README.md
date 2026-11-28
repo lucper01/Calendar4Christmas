@@ -5,7 +5,7 @@ Un calendrier de l'Avent scientifique et photographique pour décembre **2026**,
 ## Accès et mode de vérification
 
 - **Cloudflare Access** protège le domaine Workers. Les API et médias doivent rester couverts par cette politique, y compris `/api/*`.
-- Un écran d'invitation supplémentaire utilise le code **M2CSGA**, contrôlé côté navigateur par une empreinte PBKDF2. Il n'est **pas** un mécanisme de sécurité suffisant à lui seul.
+- Un écran d'invitation supplémentaire utilise le code transmis aux invités, contrôlé côté navigateur par une empreinte PBKDF2. Il n'est **pas** un mécanisme de sécurité suffisant à lui seul.
 - Le bouton **Mode démo** ouvre une fenêtre demandant le code **triche**. Une fois validé par le Worker, il donne accès **aux 24 cases immédiatement, y compris tous les albums et vidéos R2**, sans attendre leurs dates.
 - Le Worker active une session démo limitée à **2 heures** via un cookie `HttpOnly; Secure; SameSite=Strict`. Le bouton **Quitter la démo** supprime ce cookie. La session expire également à la fermeture du navigateur si le cookie de session est supprimé.
 - Hors démo, les images et vidéos de chaque jour ne sont accessibles qu'après la date correspondante selon le fuseau **Europe/Paris**, contrôlé par le Worker. La progression officielle n'est pas augmentée par les ouvertures anticipées en démo.
