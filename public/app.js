@@ -17,6 +17,7 @@
   };
   const state = readState();
   let demo = false;
+  const previewPicks = {};
   let activeDay = null;
   let toastTimer = null;
   let audio = null;
@@ -68,18 +69,22 @@
 
   function draw(day, reroll = false) {
     if (!surprises.length) return null;
-    const existing = Number(state.picks[day]);
+    const previewOnly = demo && !officiallyUnlocked(day);
+    const picks = previewOnly ? previewPicks : state.picks;
+    const existing = Number(picks[day]);
     if (!reroll && Number.isInteger(existing) && existing >= 0 && existing < surprises.length) return localizedSurprise(existing);
-    const occupied = new Set(Object.values(state.picks).map(Number).filter(Number.isInteger));
+    const occupied = new Set([...Object.values(state.picks),...Object.values(previewPicks)].map(Number).filter(Number.isInteger));
     const fresh = surprises.map((_, i) => i).filter(i => !occupied.has(i) && !state.seen.includes(i));
     const unoccupied = surprises.map((_, i) => i).filter(i => !occupied.has(i));
     const withoutCurrent = surprises.map((_, i) => i).filter(i => i !== existing);
     const pool = fresh.length ? fresh : (unoccupied.length ? unoccupied : withoutCurrent);
     const index = pool[rand(pool.length)] ?? 0;
-    if (reroll) delete state.answers[day];
-    state.picks[day] = index;
-    if (!state.seen.includes(index)) state.seen.push(index);
-    persist();
+    picks[day] = index;
+    if (!previewOnly) {
+      if (reroll) delete state.answers[day];
+      if (!state.seen.includes(index)) state.seen.push(index);
+      persist();
+    }
     return localizedSurprise(index);
   }
 
@@ -232,7 +237,7 @@
     const album = window.C4C_SECURE?.getDay(day);
     const isAlbum = album?.type==="album";
     const item = isAlbum ? null : draw(day);
-    // Demo never changes official progress, and unreleased private photos stay private.
+    // Demo allows verifying all media without marking future doors officially opened.
     if (officiallyUnlocked(day) && !wasOpened) {
       state.opened.push(day);
       state.opened.sort((a,b) => a-b);
@@ -331,11 +336,53 @@
     layer.appendChild(fragment);
   }
 
-  $("preview-toggle").addEventListener("click", () => {
-    demo = !demo;
-    updateDemoButton();
-    renderGrid();
-    showToast(demo ? t("demo_on") : t("demo_off"));
+  const demoDialog=$("demo-code-dialog");
+  const demoForm=$("demo-code-form");
+  const demoInput=$("demo-code-input");
+  const demoError=$("demo-code-error");
+  const demoSubmit=$("demo-code-submit");
+  let demoBusy=false;
+  $("preview-toggle").addEventListener("click", async () => {
+    if(demoBusy)return;
+    if(!demo){
+      demoError.textContent="";
+      demoInput.value="";
+      demoDialog.showModal();
+      demoInput.focus();
+      return;
+    }
+    demoBusy=true;
+    try{
+      await window.C4C_SECURE.deactivateDemo();
+      showToast(t("demo_off"));
+    }catch{
+      showToast(t("demo_connection_error"));
+    }finally{demoBusy=false;}
+  });
+  $("demo-code-cancel").addEventListener("click",()=>demoDialog.close());
+  demoDialog.addEventListener("close",()=>{
+    demoInput.value="";
+    demoError.textContent="";
+  });
+  demoForm.addEventListener("submit",async event=>{
+    event.preventDefault();
+    if(demoBusy)return;
+    demoBusy=true;
+    demoSubmit.disabled=true;
+    demoSubmit.textContent=t("demo_activating");
+    demoError.textContent="";
+    try {
+      await window.C4C_SECURE.activateDemo(demoInput.value);
+      demoDialog.close();
+      showToast(t("demo_on"));
+    }catch(err){
+      demoError.textContent=err?.status===401?t("demo_invalid"):t("demo_connection_error");
+      demoInput.select();
+    }finally{
+      demoBusy=false;
+      demoSubmit.disabled=false;
+      demoSubmit.textContent=t("demo_activate");
+    }
   });
   $("sound-toggle").addEventListener("click", () => {
     state.sound = !state.sound;
@@ -357,13 +404,19 @@
     play("open");
   });
   $("surprise-dialog").addEventListener("close", () => { activeDay = null; });
-  window.addEventListener("c4c:calendar", renderGrid);
+  window.addEventListener("c4c:calendar", ()=>{
+    const nextDemo=window.C4C_SECURE?.demo===true;
+    if(demo && !nextDemo) Object.keys(previewPicks).forEach(key=>delete previewPicks[key]);
+    demo=nextDemo;
+    updateDemoButton();
+    renderGrid();
+  });
   window.addEventListener("c4c:language", () => {
     updateSoundButton();
     updateDemoButton();
     renderGrid();
     if(activeDay!=null && !window.C4C_SECURE?.getDay(activeDay)?.type) {
-      const index=Number(state.picks[activeDay]);
+      const index=Number((demo && !officiallyUnlocked(activeDay) ? previewPicks : state.picks)[activeDay]);
       if(Number.isInteger(index) && surprises[index]) showSurprise(activeDay,localizedSurprise(index));
     }
   });

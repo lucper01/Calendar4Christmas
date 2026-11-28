@@ -76,3 +76,17 @@ body.access-locked .confetti-layer{display:none!important}
 .album-media-type{font:800 9px/1.4 var(--body);letter-spacing:.17em;color:#bfcaba;text-transform:uppercase}
 @media(max-width:650px){.header-actions{flex-wrap:wrap;justify-content:flex-end}.header-actions>.language-picker{margin-right:0}.gate-panel>.language-picker{margin-bottom:15px}.album-stage{max-height:50vh}.album-media{max-height:50vh}}
 @media(max-width:390px){.brand-mark{display:none}.brand-text{font-size:13px}.header-actions{gap:4px}.header-actions>.language-picker{padding:2px 5px}.header-actions>.language-picker button{min-width:25px;height:25px}}
+
+/* Verification-only demo password dialog (FR / EN). */
+.demo-code-dialog{border:1px solid rgba(246,209,152,.55);border-radius:20px;background:#10382e;color:#f7f0db;padding:0;width:min(92vw,460px);max-height:calc(100dvh - 34px);box-shadow:0 32px 100px rgba(0,0,0,.65);overflow-y:auto}
+.demo-code-dialog::backdrop{background:rgba(2,17,15,.82);backdrop-filter:blur(6px)}
+.demo-code-form{padding:clamp(22px,5vw,40px);display:flex;flex-direction:column;gap:12px}
+.demo-code-form h2{font:600 clamp(26px,5vw,35px)/1.1 var(--display);letter-spacing:-.025em;margin:0}
+.demo-code-form p{font-size:13px;line-height:1.75;color:#d3dfd4}
+.demo-code-form label{font:800 11px/1.3 var(--body);letter-spacing:.09em;color:var(--gold-light);text-transform:uppercase;margin-top:6px}
+.demo-code-form input{width:100%;min-height:50px;border:1px solid rgba(242,210,156,.6);border-radius:10px;background:#07241e;color:#fff8e8;padding:12px 16px;font:600 16px/1.4 var(--body)}
+.demo-code-form input:focus-visible{outline:3px solid #e6c376;outline-offset:3px}
+.demo-code-form .demo-code-error{min-height:19px;color:#ffb9a9;margin:0}
+.demo-code-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap;padding-top:8px}
+.demo-code-actions button{min-height:44px}
+.demo-code-actions button:disabled{cursor:wait;opacity:.6}

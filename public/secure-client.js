@@ -1,7 +1,7 @@
 (() => {
   "use strict";
   const t=(key,vars)=>window.C4C_I18N?.t(key,vars)||key;
-  let days=new Map(), currentAlbum=null, currentSlide=0, initialized=false;
+  let days=new Map(), currentAlbum=null, currentSlide=0, initialized=false, demo=false;
   const $=id=>document.getElementById(id);
   function localized(value) {
     if(typeof value==="string")return value;
@@ -19,12 +19,14 @@
     try {
       const data=await api("/api/calendar");
       days=new Map((data.days || []).map(item=>[item.day,item]));
+      demo=data.demo===true;
       initialized=true;
       window.dispatchEvent(new CustomEvent("c4c:calendar"));
-    } catch { initialized=false;days.clear(); }
+      return true;
+    } catch { initialized=false;days.clear();demo=false;return false; }
   }
   function reset() {
-    initialized=false; days.clear();currentAlbum=null;
+    initialized=false; days.clear();currentAlbum=null;demo=false;
     if($("album-gallery")) $("album-gallery").replaceChildren();
   }
   function getDay(day){return days.get(Number(day))||null;}
@@ -114,6 +116,23 @@
       $("dialog-body").textContent=t("album_error");
     }
   }
+  async function demoRequest(method,code){
+    const options={method,credentials:"same-origin",cache:"no-store"};
+    if(method==="POST"){
+      options.headers={"Content-Type":"application/json"};
+      options.body=JSON.stringify({code});
+    }
+    const response=await fetch("/api/demo",options);
+    if(!response.ok){
+      const issue=new Error("Demo request rejected: "+response.status);
+      issue.status=response.status;
+      throw issue;
+    }
+    if(!await init())throw new Error("Could not refresh calendar after demo change");
+    return demo;
+  }
+  const activateDemo=code=>demoRequest("POST",code);
+  const deactivateDemo=()=>demoRequest("DELETE");
   // Calendar metadata contains no unreleased filenames or private media.
   void init();
   window.addEventListener("c4c:logout",reset);
@@ -124,5 +143,5 @@
     $("album-gallery").hidden=true;
     $("reroll-button").hidden=false;
   });
-  window.C4C_SECURE={getDay,openAlbum,reset,get initialized(){return initialized;}};
+  window.C4C_SECURE={getDay,openAlbum,reset,activateDemo,deactivateDemo,get demo(){return demo;},get initialized(){return initialized;}};
 })();

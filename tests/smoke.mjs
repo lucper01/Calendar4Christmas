@@ -39,6 +39,43 @@ const listing=await (await call("/api/calendar")).json();
 assert.equal(listing.days.length,24);
 assert.equal(listing.days[0].type,"album");
 assert.equal("filename" in listing.days[0],false);
+assert.equal(listing.demo,false);
+assert.equal((await (await call("/api/demo")).json()).demo,false);
+const badDemo=await call("/api/demo",{
+  method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:"not-triche"})
+});
+assert.equal(badDemo.status,401);
+assert.equal((await (await call("/api/demo")).json()).demo,false);
+const crossSite=await call("/api/demo",{
+  method:"POST",headers:{"Origin":"https://untrusted.invalid","Content-Type":"application/json"},
+  body:JSON.stringify({code:"triche"})
+});
+assert.equal(crossSite.status,403);
+const enabledDemo=await call("/api/demo",{
+  method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:"triche"})
+});
+assert.equal(enabledDemo.status,200);
+const cookie=enabledDemo.headers.get("set-cookie");
+assert.match(cookie,/HttpOnly/);
+assert.match(cookie,/SameSite=Strict/);
+assert.match(cookie,/Secure/);
+const demoHeader={"Cookie":cookie.split(";")[0]};
+const demoCalendar=await (await call("/api/calendar",{headers:demoHeader})).json();
+assert.equal(demoCalendar.demo,true);
+assert.equal(demoCalendar.days.length,24);
+assert.ok(demoCalendar.days.every(day=>day.available===true),"Demo must unlock all days");
+const demoDay=await call("/api/day/1",{headers:demoHeader});
+assert.equal(demoDay.status,200);
+assert.equal((await demoDay.json()).media[0].id,"m001");
+const demoMedia=await call("/api/media/m001",{headers:demoHeader});
+assert.equal(demoMedia.status,200);
+assert.equal(demoMedia.headers.get("Content-Type"),"image/jpeg");
+assert.equal((await call("/api/media/m001",{headers:{...demoHeader,Range:"bytes=malformed"}})).status,416);
+const disabledDemo=await call("/api/demo",{method:"DELETE",headers:demoHeader});
+assert.equal(disabledDemo.status,200);
+assert.match(disabledDemo.headers.get("set-cookie"),/Max-Age=0/);
+const clearedHeader={"Cookie":disabledDemo.headers.get("set-cookie").split(";")[0]};
+assert.equal((await (await call("/api/calendar",{headers:clearedHeader})).json()).demo,false);
 const parts=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{
   timeZone:"Europe/Paris",year:"numeric",month:"numeric",day:"numeric"
 }).formatToParts(new Date()).map(x=>[x.type,Number(x.value)]));
@@ -82,4 +119,4 @@ assert.ok(readFileSync("public/index.html","utf8").includes("secure-client.js"),
 assert.ok(readFileSync("public/access.js","utf8").includes("EXPECTED_HEX"),"Existing invitation code gate missing");
 assert.equal(readFileSync("src/worker.js","utf8").includes("ADMIN_TOKEN"),false);
 assert.equal(readFileSync("src/worker.js","utf8").includes("/api/admin"),false);
-console.log("PASS: Cloudflare R2 read-only gallery, dates, no admin endpoints, FR/EN");
+console.log("PASS: Cloudflare R2 release, triche demo access, wrong-code rejection, logout, no admin endpoints, FR/EN");

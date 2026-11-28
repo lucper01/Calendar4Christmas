@@ -10,6 +10,20 @@
 const YEAR = 2026;
 const MANIFEST = "calendar.json";
 const ID = /^m[0-9]{3}$/;
+const DEMO_COOKIE = "c4c_demo";
+const DEMO_CODE = "triche";
+const DEMO_SESSION_SECONDS = 2 * 60 * 60;
+function demoEnabled(request) {
+  // Demo access is for testing, not a second security boundary.
+  // Cloudflare Access must remain enabled for every Worker route.
+  return (request.headers.get("Cookie") || "").split(";")
+    .some(part => part.trim() === DEMO_COOKIE + "=1");
+}
+function demoCookie(enabled) {
+  return DEMO_COOKIE + "=" + (enabled ? "1" : "")
+    + "; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age="
+    + (enabled ? DEMO_SESSION_SECONDS : 0);
+}
 const PUBLIC_FILES = new Set([
   "/", "/index.html", "/styles.css", "/access.js", "/app.js", "/i18n.js",
   "/surprises.js", "/surprises.en.js", "/secure-client.js", "/sw.js",
@@ -54,7 +68,7 @@ function publicAlbum(entry){
 async function streamMedia(request,env,id) {
   if(!ID.test(id))return error(404,"Fichier introuvable.");
   const data=await loadManifest(env);
-  const matched=data?.days.flatMap(d=>d.type==="album" && released(d.day)?d.media:[]).find(m=>m.id===id);
+  const matched=data?.days.flatMap(d=>d.type==="album" && (released(d.day) || demoEnabled(request))?d.media:[]).find(m=>m.id===id);
   if(!matched)return error(404,"Fichier indisponible.");
   const extension=matched.filename.split(".").pop().toLowerCase();
   const mime={"jpg":"image/jpeg","jpeg":"image/jpeg","png":"image/png","webp":"image/webp","mp4":"video/mp4"}[extension];
@@ -82,22 +96,43 @@ async function streamMedia(request,env,id) {
 }
 async function api(request,env){
   const path=new URL(request.url).pathname,method=request.method;
+  if(path==="/api/demo"){
+    if(method==="GET")return send({ok:true,demo:demoEnabled(request)});
+    if(method==="DELETE"){
+      if(!originOk(request))return error(403,"Origine non autorisée.");
+      return send({ok:true,demo:false},200,{"Set-Cookie":demoCookie(false)});
+    }
+    if(method==="POST"){
+      if(!originOk(request))return error(403,"Origine non autorisée.");
+      const length=Number(request.headers.get("Content-Length")||0);
+      if(length>256)return error(413,"Requête trop volumineuse.");
+      const bodyText=await request.text();
+      if(bodyText.length>256)return error(413,"Requête trop volumineuse.");
+      let value;
+      try{value=JSON.parse(bodyText);}catch{return error(400,"Code de démonstration requis.");}
+      if(typeof value?.code!=="string" || value.code.trim().toLowerCase()!==DEMO_CODE){
+        return error(401,"Code de démonstration incorrect.");
+      }
+      return send({ok:true,demo:true},200,{"Set-Cookie":demoCookie(true)});
+    }
+    return error(405,"Méthode non autorisée.");
+  }
   if(path==="/api/health"&&method==="GET"){
     return send({ok:true,worker:true,r2Bound:Boolean(env.MEDIA),storageReady:Boolean(await loadManifest(env))});
   }
   const calendar=await loadManifest(env);
   if(path==="/api/calendar"&&method==="GET"){
-    return send({ok:true,ready:Boolean(calendar),year:YEAR,
+    return send({ok:true,ready:Boolean(calendar),year:YEAR,demo:demoEnabled(request),
       days:calendar?calendar.days.map(d=>({
-        day:d.day,type:d.type,available:released(d.day),
-        count:released(d.day)&&d.type==="album"?d.media.length:0,
-        ...(released(d.day)&&d.type==="album"?{title:d.title}:{})
+        day:d.day,type:d.type,available:released(d.day)||demoEnabled(request),
+        count:(released(d.day)||demoEnabled(request))&&d.type==="album"?d.media.length:0,
+        ...((released(d.day)||demoEnabled(request))&&d.type==="album"?{title:d.title}:{})
       })):[]});
   }
   const matchDay=/^\/api\/day\/(\d{1,2})$/.exec(path);
   if(matchDay&&method==="GET"){
     const day=Number(matchDay[1]);
-    if(day<1||day>24||!released(day))return error(403,"Cette case est encore fermée.");
+    if(day<1||day>24||!(released(day)||demoEnabled(request)))return error(403,"Cette case est encore fermée.");
     const entry=calendar?.days.find(d=>d.day===day);
     return entry?.type==="album"?send({ok:true,...publicAlbum(entry)}):error(404,"Pas d'album à cette date.");
   }

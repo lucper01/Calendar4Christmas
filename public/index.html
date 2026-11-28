@@ -13,13 +13,13 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Fraunces:opsz,wght,SOFT,WONK@9..144,500,0,1;9..144,600,0,1;9..144,700,0,1&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css?v=2">
-  <script defer src="./i18n.js"></script>
-  <script defer src="./access.js"></script>
-  <script defer src="./surprises.js"></script>
-  <script defer src="./surprises.en.js"></script>
-  <script defer src="./secure-client.js"></script>
-  <script defer src="./app.js"></script>
+  <link rel="stylesheet" href="./styles.css?v=6">
+  <script defer src="./i18n.js?v=6"></script>
+  <script defer src="./access.js?v=6"></script>
+  <script defer src="./surprises.js?v=6"></script>
+  <script defer src="./surprises.en.js?v=6"></script>
+  <script defer src="./secure-client.js?v=6"></script>
+  <script defer src="./app.js?v=6"></script>
   <title>Calendar4Christmas | Un Noël très curieux</title>
 </head>
 <body class="access-locked">
@@ -140,6 +140,20 @@
         <button class="main-button dialog-done" id="dialog-done" type="button"><span data-i18n="done">C’est dans la boîte !</span> <span aria-hidden="true">↗</span></button>
       </div>
     </div>
+  </dialog>
+  <dialog class="demo-code-dialog" id="demo-code-dialog" aria-labelledby="demo-code-heading">
+    <form id="demo-code-form" class="demo-code-form">
+      <div class="dialog-stars" aria-hidden="true">✦ &nbsp; ✧ &nbsp; ✦</div>
+      <h2 id="demo-code-heading" data-i18n="demo_heading">Mode de vérification</h2>
+      <p id="demo-code-intro" data-i18n="demo_intro">Entre le code de démonstration pour tester les 24 cases, photos et vidéos comprises, avant décembre.</p>
+      <label for="demo-code-input" data-i18n="demo_code_label">Code de démonstration</label>
+      <input id="demo-code-input" name="demoCode" type="password" autocomplete="off" required maxlength="64" data-i18n-placeholder="demo_code_placeholder" placeholder="Code démo" />
+      <p class="demo-code-error" id="demo-code-error" role="alert" aria-live="assertive"></p>
+      <div class="demo-code-actions">
+        <button id="demo-code-cancel" type="button" class="secondary-button" data-i18n="demo_cancel">Annuler</button>
+        <button id="demo-code-submit" type="submit" class="main-button" data-i18n="demo_activate">Activer la démo</button>
+      </div>
+    </form>
   </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
