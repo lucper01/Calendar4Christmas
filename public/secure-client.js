@@ -72,7 +72,7 @@
     const translation=window.C4C_I18N?.lang==="en"?window.C4C_SURPRISES_EN?.[index]:null;
     return {...base,...(translation||{}),type:base.type==="quiz"?"quiz":"info",
       title:translation?.title||base.title,body:translation?.body||base.body,
-      question:translation?.question||base.body};
+      question:translation?.question||translation?.body||base.body};
   }
   function renderBonus(day){
     const area=make("section","daily-bonus");
