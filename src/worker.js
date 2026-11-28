@@ -122,7 +122,7 @@ async function api(request,env){
   }
   const calendar=await loadManifest(env);
   if(path==="/api/calendar"&&method==="GET"){
-    return send({ok:true,ready:Boolean(calendar),year:YEAR,
+    return send({ok:true,ready:Boolean(calendar),year:YEAR,demo:demoEnabled(request),
       days:calendar?calendar.days.map(d=>({
         day:d.day,type:d.type,available:released(d.day)||demoEnabled(request),
         count:(released(d.day)||demoEnabled(request))&&d.type==="album"?d.media.length:0,
