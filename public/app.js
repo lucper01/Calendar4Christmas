@@ -316,6 +316,7 @@
   function updateDemoButton() {
     $("preview-toggle").setAttribute("aria-pressed", String(demo));
     $("preview-label").textContent = demo ? t("quit_demo") : t("demo");
+    $("admin-link").hidden = !demo;
   }
 
   function createSnow() {
