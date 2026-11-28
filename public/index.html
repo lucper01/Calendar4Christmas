@@ -141,6 +141,20 @@
       </div>
     </div>
   </dialog>
+  <dialog class="demo-code-dialog" id="demo-code-dialog" aria-labelledby="demo-code-heading">
+    <form id="demo-code-form" class="demo-code-form">
+      <div class="dialog-stars" aria-hidden="true">✦ &nbsp; ✧ &nbsp; ✦</div>
+      <h2 id="demo-code-heading" data-i18n="demo_heading">Mode de vérification</h2>
+      <p id="demo-code-intro" data-i18n="demo_intro">Entre le code de démonstration pour tester les 24 cases, photos et vidéos comprises, avant décembre.</p>
+      <label for="demo-code-input" data-i18n="demo_code_label">Code de démonstration</label>
+      <input id="demo-code-input" name="demoCode" type="password" autocomplete="off" required maxlength="64" data-i18n-placeholder="demo_code_placeholder" placeholder="Code démo" />
+      <p class="demo-code-error" id="demo-code-error" role="alert" aria-live="assertive"></p>
+      <div class="demo-code-actions">
+        <button id="demo-code-cancel" type="button" class="secondary-button" data-i18n="demo_cancel">Annuler</button>
+        <button id="demo-code-submit" type="submit" class="main-button" data-i18n="demo_activate">Activer la démo</button>
+      </div>
+    </form>
+  </dialog>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="confetti-layer" id="confetti-layer" aria-hidden="true"></div>
 </body>
