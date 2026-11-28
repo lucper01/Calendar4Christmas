@@ -17,6 +17,7 @@
   };
   const state = readState();
   let demo = false;
+  const previewPicks = {};
   let activeDay = null;
   let toastTimer = null;
   let audio = null;
@@ -68,18 +69,22 @@
 
   function draw(day, reroll = false) {
     if (!surprises.length) return null;
-    const existing = Number(state.picks[day]);
+    const previewOnly = demo && !officiallyUnlocked(day);
+    const picks = previewOnly ? previewPicks : state.picks;
+    const existing = Number(picks[day]);
     if (!reroll && Number.isInteger(existing) && existing >= 0 && existing < surprises.length) return localizedSurprise(existing);
-    const occupied = new Set(Object.values(state.picks).map(Number).filter(Number.isInteger));
+    const occupied = new Set([...Object.values(state.picks),...Object.values(previewPicks)].map(Number).filter(Number.isInteger));
     const fresh = surprises.map((_, i) => i).filter(i => !occupied.has(i) && !state.seen.includes(i));
     const unoccupied = surprises.map((_, i) => i).filter(i => !occupied.has(i));
     const withoutCurrent = surprises.map((_, i) => i).filter(i => i !== existing);
     const pool = fresh.length ? fresh : (unoccupied.length ? unoccupied : withoutCurrent);
     const index = pool[rand(pool.length)] ?? 0;
-    if (reroll) delete state.answers[day];
-    state.picks[day] = index;
-    if (!state.seen.includes(index)) state.seen.push(index);
-    persist();
+    picks[day] = index;
+    if (!previewOnly) {
+      if (reroll) delete state.answers[day];
+      if (!state.seen.includes(index)) state.seen.push(index);
+      persist();
+    }
     return localizedSurprise(index);
   }
 
@@ -400,7 +405,9 @@
   });
   $("surprise-dialog").addEventListener("close", () => { activeDay = null; });
   window.addEventListener("c4c:calendar", ()=>{
-    demo=window.C4C_SECURE?.demo===true;
+    const nextDemo=window.C4C_SECURE?.demo===true;
+    if(demo && !nextDemo) Object.keys(previewPicks).forEach(key=>delete previewPicks[key]);
+    demo=nextDemo;
     updateDemoButton();
     renderGrid();
   });
@@ -409,7 +416,7 @@
     updateDemoButton();
     renderGrid();
     if(activeDay!=null && !window.C4C_SECURE?.getDay(activeDay)?.type) {
-      const index=Number(state.picks[activeDay]);
+      const index=Number((demo && !officiallyUnlocked(activeDay) ? previewPicks : state.picks)[activeDay]);
       if(Number.isInteger(index) && surprises[index]) showSurprise(activeDay,localizedSurprise(index));
     }
   });
