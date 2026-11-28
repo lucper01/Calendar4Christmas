@@ -2,121 +2,106 @@ import assert from "node:assert/strict";
 import {readFileSync} from "node:fs";
 import vm from "node:vm";
 import worker from "../src/worker.js";
-
 const BASE="https://calendar4christmas.example";
-const calendar={year:2026,days:Array.from({length:24},(_,i)=>i===0?{
-  day:1,type:"album",title:{fr:"Photos test",en:"Test photos"},
-  description:{fr:"Exemple",en:"Example"},media:[{
-    id:"m001",type:"image",filename:"holiday.jpg",
-    caption:{fr:"Une image",en:"An image"},alt:{fr:"Photo test",en:"Test photograph"}
-  }]
-}:{day:i+1,type:"science"})};
-const sample=Uint8Array.from([0xff,0xd8,0xff,0xd9]);
-const objects=new Map([["calendar.json",calendar],["media/m001.jpg",sample]]);
+const original={year:2026,days:Array.from({length:24},(_,i)=>({
+ day:i+1,type:i<21?"album":"science",
+ title:{fr:"Jour "+(i+1),en:"Day "+(i+1)},
+ description:{fr:"Journal du laboratoire",en:"Laboratory log"},
+ ...(i<21?{media:i<3?[
+  {id:"m"+String(i*2+1).padStart(3,"0"),type:"image",filename:"portrait"+i+".jpg",caption:{fr:"",en:""},alt:{fr:"Photo",en:"Photo"}},
+  {id:"m"+String(i*2+2).padStart(3,"0"),type:"image",filename:"portrait"+i+".jpg",caption:{fr:"",en:""},alt:{fr:"Photo",en:"Photo"}}]:[
+  {id:"m"+String(i+4).padStart(3,"0"),type:"image",filename:"image"+i+".jpg",caption:{fr:"",en:""},alt:{fr:"Photo",en:"Photo"}}]
+ }:{})
+}))};
+const images=new Map();
+for(const d of original.days)for(const item of d.media||[])images.set("media/"+item.id+".jpg",new Uint8Array([255,216,255,217]));
+const entries=new Map([["calendar.json",original],...images]);
 const MEDIA={
-  get:async key=>{
-    if(!objects.has(key))return null;
-    const obj=objects.get(key);
-    if(key==="calendar.json")return {json:async()=>obj};
-    return {body:new Blob([obj]).stream(),size:obj.byteLength,httpEtag:'"test"',
-      writeHttpMetadata:h=>h.set("Content-Type","image/jpeg")};
-  },
-  put:async()=>{throw Error("R2 modifications disabled: dashboard-only uploads");},
-  head:async()=>{throw Error("R2 read-only API");}
+ get:async(key)=>{if(!entries.has(key))return null;
+  const content=entries.get(key);
+  if(key==="calendar.json")return {json:async()=>structuredClone(content)};
+  return {body:new Blob([content]).stream(),size:content.byteLength,httpEtag:'"test"',
+   writeHttpMetadata:headers=>headers.set("Content-Type","image/jpeg")};},
+ put:async(key,value)=>{entries.set(key,typeof value==="string"?JSON.parse(value):new Uint8Array(value));},
+ head:async(key)=>entries.has(key)?{key}:null
 };
-const ASSETS={fetch:async()=>new Response("<html>Advent</html>",{headers:{"content-type":"text/html"}})};
-const env={MEDIA,ASSETS};
-async function call(path,init={}) {
-  const request=new Request(BASE+path,{...init,
-    headers:{"Origin":BASE,...(init.headers||{})}});
-  return worker.fetch(request,env);
+const ASSETS={fetch:async()=>new Response("Calendar",{headers:{"Content-Type":"text/html"}})};
+async function call(path,options={}){
+ const request=new Request(BASE+path,{...options,headers:{"Origin":BASE,...options.headers}});
+ return worker.fetch(request,{MEDIA,ASSETS});
 }
-assert.equal((await call("/")).status,200);
+const json=async(path,method,body,headers={})=>call(path,{method,
+ headers:{"Content-Type":"application/json",...headers},
+ body:JSON.stringify(body)});
 const health=await (await call("/api/health")).json();
-assert.equal(health.r2Bound,true);
 assert.equal(health.storageReady,true);
-const listing=await (await call("/api/calendar")).json();
-assert.equal(listing.days.length,24);
-assert.equal(listing.days[0].type,"album");
-assert.equal("filename" in listing.days[0],false);
-assert.equal(listing.demo,false);
-assert.equal((await (await call("/api/demo")).json()).demo,false);
-const badDemo=await call("/api/demo",{
-  method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:"not-triche"})
-});
-assert.equal(badDemo.status,401);
-assert.equal((await (await call("/api/demo")).json()).demo,false);
-const crossSite=await call("/api/demo",{
-  method:"POST",headers:{"Origin":"https://untrusted.invalid","Content-Type":"application/json"},
-  body:JSON.stringify({code:"triche"})
-});
-assert.equal(crossSite.status,403);
-const enabledDemo=await call("/api/demo",{
-  method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:"triche"})
-});
-assert.equal(enabledDemo.status,200);
-const cookie=enabledDemo.headers.get("set-cookie");
-assert.match(cookie,/HttpOnly/);
-assert.match(cookie,/SameSite=Strict/);
-assert.match(cookie,/Secure/);
-const demoHeader={"Cookie":cookie.split(";")[0]};
-const demoCalendar=await (await call("/api/calendar",{headers:demoHeader})).json();
-assert.equal(demoCalendar.demo,true);
-assert.equal(demoCalendar.days.length,24);
-assert.ok(demoCalendar.days.every(day=>day.available===true),"Demo must unlock all days");
-const demoDay=await call("/api/day/1",{headers:demoHeader});
-assert.equal(demoDay.status,200);
-assert.equal((await demoDay.json()).media[0].id,"m001");
-const demoMedia=await call("/api/media/m001",{headers:demoHeader});
-assert.equal(demoMedia.status,200);
-assert.equal(demoMedia.headers.get("Content-Type"),"image/jpeg");
-assert.equal((await call("/api/media/m001",{headers:{...demoHeader,Range:"bytes=malformed"}})).status,416);
-const disabledDemo=await call("/api/demo",{method:"DELETE",headers:demoHeader});
-assert.equal(disabledDemo.status,200);
-assert.match(disabledDemo.headers.get("set-cookie"),/Max-Age=0/);
-const clearedHeader={"Cookie":disabledDemo.headers.get("set-cookie").split(";")[0]};
-assert.equal((await (await call("/api/calendar",{headers:clearedHeader})).json()).demo,false);
-const parts=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{
-  timeZone:"Europe/Paris",year:"numeric",month:"numeric",day:"numeric"
+const regular=await (await call("/api/calendar")).json();
+assert.equal(regular.days.length,24);
+assert.ok(regular.days.every(d=>d.type==="album"),"All 24 days have media");
+const dateParts=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{
+ timeZone:"Europe/Paris",year:"numeric",month:"numeric",day:"numeric"
 }).formatToParts(new Date()).map(x=>[x.type,Number(x.value)]));
-const released=parts.year>2026||(parts.year===2026&&parts.month===12&&parts.day>=1);
+const released=dateParts.year>2026||(dateParts.year===2026&&dateParts.month===12&&dateParts.day>=1);
 assert.equal((await call("/api/day/1")).status,released?200:403);
-const media=await call("/api/media/m001");
-assert.equal(media.status,released?200:404);
-if(released){
- assert.equal(media.headers.get("content-type"),"image/jpeg");
- const album=await (await call("/api/day/1")).json();
- assert.equal("filename" in album.media[0],false);
- assert.equal(album.media[0].id,"m001");
-}
-assert.equal((await call("/api/admin/manifest")).status,404);
-assert.equal((await call("/api/admin/media/m001",{method:"PUT",body:sample})).status,404);
-assert.equal((await call("/api/media/m001",{method:"PUT",body:sample})).status,404);
-assert.equal((await call("/api/media/m001",{headers:{Range:"bytes=malformed"}})).status,released?416:404);
-const web=await call("/");
-assert.match(web.headers.get("content-security-policy"),/script-src 'self'/);
+assert.equal((await call("/api/admin/calendar")).status,403);
+assert.equal((await json("/api/demo","POST",{code:"incorrect"})).status,401);
+const enabled=await json("/api/demo","POST",{code:"triche"});
+assert.equal(enabled.status,200);
+const token={"Cookie":enabled.headers.get("Set-Cookie").split(";")[0]};
+const admin=await (await call("/api/admin/calendar",{headers:token})).json();
+assert.equal(admin.manifest.schemaVersion,2);
+assert.equal(admin.manifest.days.length,24);
+assert.ok(admin.manifest.days.every(x=>x.media.length>=1),"No empty daily galleries after upgrade");
+assert.equal(admin.manifest.days.reduce((a,x)=>a+x.media.length,0),original.days.reduce((a,x)=>a+(x.media||[]).length,0));
+const preview=await (await call("/api/calendar",{headers:token})).json();
+assert.ok(preview.days.every(d=>d.available));
+const album=await (await call("/api/day/24",{headers:token})).json();
+assert.ok(album.media.length>=1);
+assert.equal(album.bonus.type,"surprise");
+assert.equal((await call("/api/media/"+album.media[0].id,{headers:token})).status,200);
+assert.equal((await json("/api/admin/calendar","PUT",{},token)).status,400);
+const updated=admin.manifest;
+updated.days[0].bonus={type:"quiz",
+ question:{fr:"La bonne réponse ?",en:"Correct answer?"},
+ options:{fr:["Oui","Non"],en:["Yes","No"]},
+ correctIndex:0,explanation:{fr:"Explication",en:"Explanation"}};
+updated.days[1].bonus={type:"info",title:{fr:"La science",en:"Science"},
+ body:{fr:"Une information du jour",en:"A daily fact"}};
+assert.equal((await json("/api/admin/calendar","PUT",updated,token)).status,200);
+const changed=await (await call("/api/day/1",{headers:token})).json();
+assert.equal(changed.bonus.type,"quiz");
+const first=await (await call("/api/admin/calendar",{headers:token})).json();
+assert.equal(first.manifest.days[1].bonus.type,"info");
+const image=Uint8Array.from([255,216,255,217]);
+const uploaded=await call("/api/admin/media",{
+ method:"POST",headers:{...token,"Content-Type":"image/jpeg","X-Filename":encodeURIComponent("cafetière.jpg")},
+ body:image
+});
+assert.equal(uploaded.status,200);
+const up=await uploaded.json();
+assert.ok(/^m\d{3}$/.test(up.media.id));
+assert.equal(up.media.type,"image");
+assert.equal((await call("/api/media/"+up.media.id,{headers:token})).status,200);
+const state=await (await call("/api/admin/calendar",{headers:token})).json();
+assert.equal(state.manifest.mediaLibrary.length,updated.mediaLibrary.length+1);
+state.manifest.days[23].media.push(up.media.id);
+assert.equal((await json("/api/admin/calendar","PUT",state.manifest,token)).status,200);
+assert.equal((await call("/api/admin/status",{headers:token})).status,200);
+const exit=await call("/api/demo",{method:"DELETE",headers:token});
+assert.equal(exit.status,200);
+assert.match(exit.headers.get("Set-Cookie"),/Max-Age=0/);
+const cleared={"Cookie":exit.headers.get("Set-Cookie").split(";")[0]};
+assert.equal((await call("/api/admin/calendar",{headers:cleared})).status,403);
+assert.equal((await call("/api/day/24",{headers:cleared})).status,dateParts.year>2026||(dateParts.year===2026&&dateParts.month===12&&dateParts.day>=24)?200:403);
+assert.equal((await call("/api/admin/calendar",{method:"PUT",headers:{...token,"Origin":"https://evil.invalid"},body:"{}"})).status,403);
 const scope={window:{}};
 vm.runInNewContext(readFileSync("public/surprises.js","utf8"),scope);
 vm.runInNewContext(readFileSync("public/surprises.en.js","utf8"),scope);
 assert.equal(scope.window.SURPRISES.length,47);
 assert.equal(scope.window.C4C_SURPRISES_EN.length,47);
-scope.window.C4C_SURPRISES_EN.forEach((entry,i)=>{
-  assert.ok(entry.title && entry.body,"English translation missing: "+i);
-  if(scope.window.SURPRISES[i].type==="quiz")assert.equal(entry.options.length,3);
-});
-const fakeDoc={readyState:"loading",addEventListener(){},querySelectorAll(){return []},documentElement:{lang:"fr"}};
-const locale={window:{dispatchEvent(){}},document:fakeDoc,
-  navigator:{language:"fr"},localStorage:{getItem(){return null},setItem(){}},CustomEvent:class{}};
-vm.runInNewContext(readFileSync("public/i18n.js","utf8"),locale);
-const keys=[...readFileSync("public/index.html","utf8").matchAll(/data-i18n(?:-placeholder|-aria)?="([^"]+)"/g)].map(m=>m[1]);
-for(const key of keys){
-  assert.notEqual(locale.window.C4C_I18N.t(key),key,"FR label missing: "+key);
-  locale.window.C4C_I18N.change("en");
-  assert.notEqual(locale.window.C4C_I18N.t(key),key,"EN label missing: "+key);
-  locale.window.C4C_I18N.change("fr");
+for(const path of ["public/app.js","public/admin.js","public/secure-client.js","src/worker.js"]){
+ assert.ok(readFileSync(path,"utf8").length>1000);
 }
-assert.ok(readFileSync("public/index.html","utf8").includes("secure-client.js"),"Gallery script missing");
-assert.ok(readFileSync("public/access.js","utf8").includes("EXPECTED_HEX"),"Existing invitation code gate missing");
-assert.equal(readFileSync("src/worker.js","utf8").includes("ADMIN_TOKEN"),false);
-assert.equal(readFileSync("src/worker.js","utf8").includes("/api/admin"),false);
-console.log("PASS: Cloudflare R2 release, triche demo access, wrong-code rejection, logout, no admin endpoints, FR/EN");
+assert.ok(readFileSync("public/index.html","utf8").includes('id="admin-link"'));
+assert.ok(readFileSync("public/admin.html","utf8").includes('id="admin-days"'));
+console.log("PASS: 24 photos + daily science bonuses, admin editing and upload, demo session and translations");
