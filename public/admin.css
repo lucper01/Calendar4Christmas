@@ -73,3 +73,6 @@
 @media(max-width:1160px){.admin-workspace{grid-template-columns:220px minmax(0,1fr)}.admin-library{grid-column:2}.admin-library-grid{grid-template-columns:repeat(6,minmax(0,1fr));max-height:400px}}
 @media(max-width:740px){.admin-topbar{align-items:flex-start}.admin-top-actions{justify-content:flex-end}.admin-workspace{grid-template-columns:1fr}.admin-day-panel,.admin-library{grid-column:1}.admin-days{grid-template-columns:repeat(6,minmax(0,1fr))}.admin-library-grid{grid-template-columns:repeat(4,minmax(0,1fr))}.admin-heading{align-items:flex-start}.admin-global-actions{width:100%}.admin-global-actions button{flex:1;min-width:155px}.admin-field-row{grid-template-columns:1fr}}
 @media(max-width:460px){.admin-main{padding:14px}.admin-topbar{padding:12px}.admin-brand{font-size:17px}.admin-day{min-height:59px}.admin-panel{padding:15px}.admin-assigned{grid-template-columns:48px minmax(0,1fr);gap:8px}.admin-assigned .admin-mini-actions{grid-column:2;justify-content:flex-start}.admin-library-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Honor the native hidden attribute despite author display rules. */
+.admin-workspace[hidden],.admin-locked[hidden],.admin-extra-fields[hidden]{display:none!important}
