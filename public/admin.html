@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10342e">
+  <title>Calendar4Christmas | Administration</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css?v=7">
+  <link rel="stylesheet" href="/admin.css?v=7">
+  <script defer src="/i18n.js?v=7"></script>
+  <script defer src="/admin.js?v=7"></script>
+</head>
+<body class="admin-body">
+  <header class="admin-topbar">
+    <a href="/" class="admin-brand">✦ Calendar<span>4</span>Christmas</a>
+    <nav class="admin-top-actions" aria-label="Administration">
+      <div class="language-picker" role="group" aria-label="Language / Langue">
+        <button type="button" data-lang="fr" aria-pressed="true">FR</button><span>/</span>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <a href="/" class="admin-quiet-button" id="admin-back">← Calendrier</a>
+    </nav>
+  </header>
+  <main class="admin-main">
+    <div class="admin-heading">
+      <div><p class="admin-kicker">✦ LE LABORATOIRE DU PÈRE NOËL</p>
+        <h1 id="admin-heading-title">Le calendrier, à votre façon.</h1>
+        <p id="admin-description">24 journées, leurs photographies et leurs surprises scientifiques. Sélectionnez une case, affectez les médias et enregistrez sur Cloudflare R2.</p>
+      </div>
+      <div class="admin-global-actions">
+        <button id="admin-status" class="admin-quiet-button" type="button">Vérifier les fichiers</button>
+        <button id="admin-save" class="main-button" type="button">Enregistrer les changements</button>
+      </div>
+    </div>
+    <div id="admin-message" class="admin-message" role="status" aria-live="polite"></div>
+    <section id="admin-locked" class="admin-locked" hidden>
+      <h2 id="admin-locked-title">Accès réservé au mode démo</h2>
+      <p id="admin-locked-message">Revenez au calendrier, activez le mode démo avec le code triche, puis ouvrez Administration.</p>
+      <a href="/" class="main-button" id="admin-locked-action">Activer la démo dans le calendrier</a>
+    </section>
+    <div class="admin-workspace" id="admin-workspace" hidden>
+      <section class="admin-panel admin-day-panel" aria-labelledby="admin-days-heading">
+        <div class="admin-panel-heading"><h2 id="admin-days-heading">Les 24 journées</h2>
+          <span id="admin-day-total"></span></div>
+        <div class="admin-days" id="admin-days"></div>
+        <p class="admin-hint" id="admin-days-hint">Chaque case doit avoir au moins une photo ou vidéo et une surprise scientifique.</p>
+      </section>
+      <section class="admin-panel admin-editor" aria-labelledby="admin-day-heading">
+        <div class="admin-panel-heading"><h2 id="admin-day-heading">Jour 01</h2>
+          <span class="admin-day-chip" id="admin-current-count">0 média</span></div>
+        <div class="admin-field-row">
+          <label> <span id="admin-title-fr-label">Titre · Français</span><input id="admin-title-fr" maxlength="180"></label>
+          <label> <span id="admin-title-en-label">Title · English</span><input id="admin-title-en" maxlength="180"></label>
+        </div>
+        <div class="admin-field-row">
+          <label> <span id="admin-desc-fr-label">Description · Français</span><textarea id="admin-desc-fr" rows="2" maxlength="3000"></textarea></label>
+          <label> <span id="admin-desc-en-label">Description · English</span><textarea id="admin-desc-en" rows="2" maxlength="3000"></textarea></label>
+        </div>
+        <div class="admin-panel-heading admin-subheading"><h3 id="admin-selected-heading">Photos de cette journée</h3><span id="admin-media-help">Utilisez les flèches pour réordonner.</span></div>
+        <div id="admin-selected-media" class="admin-selected-media"></div>
+        <div class="admin-panel-heading admin-subheading"><h3 id="admin-bonus-heading">Surprise du jour</h3></div>
+        <label class="admin-full-width"><span id="admin-bonus-kind-label">Type de surprise</span>
+          <select id="admin-bonus-type">
+            <option value="surprise">Surprise scientifique automatique</option>
+            <option value="info">Petite information personnalisée</option>
+            <option value="quiz">Quiz personnalisé</option>
+          </select>
+        </label>
+        <div id="admin-info-fields" class="admin-extra-fields" hidden>
+          <div class="admin-field-row">
+            <label><span>Titre de l'info · FR</span><input id="admin-info-title-fr" maxlength="180"></label>
+            <label><span>Info title · EN</span><input id="admin-info-title-en" maxlength="180"></label>
+          </div>
+          <div class="admin-field-row">
+            <label><span>Texte de l'info · FR</span><textarea id="admin-info-body-fr" rows="3" maxlength="3000"></textarea></label>
+            <label><span>Info text · EN</span><textarea id="admin-info-body-en" rows="3" maxlength="3000"></textarea></label>
+          </div>
+        </div>
+        <div id="admin-quiz-fields" class="admin-extra-fields" hidden>
+          <div class="admin-field-row">
+            <label><span>Question · FR</span><textarea id="admin-question-fr" rows="2" maxlength="320"></textarea></label>
+            <label><span>Question · EN</span><textarea id="admin-question-en" rows="2" maxlength="320"></textarea></label>
+          </div>
+          <p id="admin-quiz-note" class="admin-hint">Renseignez 2 à 4 propositions dans chaque langue, une par ligne, et la bonne réponse.</p>
+          <div class="admin-field-row">
+            <label><span>Réponses · FR</span><textarea id="admin-options-fr" rows="4"></textarea></label>
+            <label><span>Answers · EN</span><textarea id="admin-options-en" rows="4"></textarea></label>
+          </div>
+          <label class="admin-full-width"><span id="admin-correct-label">Numéro de la bonne réponse</span>
+            <select id="admin-correct"><option value="0">1 - A</option><option value="1">2 - B</option><option value="2">3 - C</option><option value="3">4 - D</option></select>
+          </label>
+          <div class="admin-field-row">
+            <label><span>Explication · FR</span><textarea id="admin-explain-fr" rows="2" maxlength="1500"></textarea></label>
+            <label><span>Explanation · EN</span><textarea id="admin-explain-en" rows="2" maxlength="1500"></textarea></label>
+          </div>
+        </div>
+      </section>
+      <section class="admin-panel admin-library" aria-labelledby="admin-library-heading">
+        <div class="admin-panel-heading"><h2 id="admin-library-heading">Médiathèque</h2>
+          <span id="admin-library-total">0 médias</span></div>
+        <p class="admin-hint" id="admin-library-hint">Appuyez sur une photo pour l'ajouter à la journée sélectionnée. Les photos peuvent figurer dans plusieurs journées.</p>
+        <label class="admin-upload" for="admin-upload-input">
+          <span class="admin-upload-icon">＋</span>
+          <strong id="admin-upload-label">Ajouter des photos ou vidéos</strong>
+          <small id="admin-upload-hint">JPEG, PNG, WebP, MP4 · 24 Mio maximum par fichier</small>
+          <input id="admin-upload-input" type="file" accept="image/jpeg,image/png,image/webp,video/mp4" multiple>
+        </label>
+        <input id="admin-library-search" type="search" placeholder="Rechercher un média…" aria-label="Rechercher un média">
+        <div class="admin-library-grid" id="admin-library-grid"></div>
+      </section>
+    </div>
+  </main>
+  <div id="admin-toast" class="admin-toast" role="alert" aria-live="assertive"></div>
+</body>
+</html>
