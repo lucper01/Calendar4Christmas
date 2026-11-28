@@ -1,0 +1,20 @@
+name: Calendar4Christmas daily content & admin checks
+on:
+  push:
+    branches: [feature/2026-daily-media-bonus-admin]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: {node-version: '22'}
+      - name: JavaScript syntax
+        run: npm run check
+      - name: Worker + calendar tests
+        run: npm test
