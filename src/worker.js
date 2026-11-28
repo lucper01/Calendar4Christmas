@@ -27,7 +27,7 @@ function demoCookie(enabled) {
 const PUBLIC_FILES = new Set([
   "/", "/index.html", "/styles.css", "/access.js", "/app.js", "/i18n.js",
   "/surprises.js", "/surprises.en.js", "/secure-client.js", "/sw.js",
-  "/manifest.webmanifest", "/assets/favicon.svg", "/admin.html", "/admin.js", 
+  "/manifest.webmanifest", "/assets/favicon.svg", "/admin.html", "/admin.js", "/admin.css", 
 ]);
 const BASE_HEADERS = {
   "Cache-Control": "private, no-store, max-age=0",
