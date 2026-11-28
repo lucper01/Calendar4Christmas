@@ -1,73 +1,49 @@
-# Calendar4Christmas — Le labo de Noël
+# Calendar4Christmas - Le labo de Noël
 
-Un calendrier de l'Avent scientifique, immersif, interactif et responsive. **24 cases** du 1er au 24 décembre **2026**, **47 surprises** sélectionnées aléatoirement (quiz, faits, défis et idées reçues) et une direction artistique Noël rouge, sapin et doré.
+Un calendrier de l'Avent scientifique et photographique pour décembre **2026**, hébergé par Cloudflare Workers. Il comprend 24 cases : **21 albums photo/vidéo** stockés dans **Cloudflare R2**, et **3 cases de surprises scientifiques**. L'interface et les 47 contenus scientifiques disponibles pour les cases non photographiques sont bilingues **FR / EN**.
 
-## Langues
+## Accès et mode de vérification
 
-L'interface du calendrier, son écran de code d'accès et les **47 surprises scientifiques** sont disponibles en **français et en anglais**. Le sélecteur `FR / EN` apparaît dès l'accueil et sur le calendrier. La préférence est enregistrée sur cet appareil (localStorage), sans compte.
+- **Cloudflare Access** protège le domaine Workers. Les API et médias doivent rester couverts par cette politique, y compris `/api/*`.
+- Un écran d'invitation supplémentaire utilise le code **M2CSGA**, contrôlé côté navigateur par une empreinte PBKDF2. Il n'est **pas** un mécanisme de sécurité suffisant à lui seul.
+- Le bouton **Mode démo** ouvre une fenêtre demandant le code **triche**. Une fois validé par le Worker, il donne accès **aux 24 cases immédiatement, y compris tous les albums et vidéos R2**, sans attendre leurs dates.
+- Le Worker active une session démo limitée à **2 heures** via un cookie `HttpOnly; Secure; SameSite=Strict`. Le bouton **Quitter la démo** supprime ce cookie. La session expire également à la fermeture du navigateur si le cookie de session est supprimé.
+- Hors démo, les images et vidéos de chaque jour ne sont accessibles qu'après la date correspondante selon le fuseau **Europe/Paris**, contrôlé par le Worker. La progression officielle n'est pas augmentée par les ouvertures anticipées en démo.
 
-> Le site actuel utilise encore un contrôle d'accès côté navigateur. **Les photos privées ne sont pas dans GitHub**. Une version avec vérification serveur, Worker Cloudflare, bucket R2 privé et albums bilingues est préparée séparément sur la branche `feature/cloudflare-private-albums` et sera déployée lorsque le stockage et les secrets Cloudflare auront été configurés.
+**Important :** `triche` est un code de vérification partagé, **pas une protection confidentielle** ; une personne qui le connaît et dispose de l'accès Cloudflare pourra consulter les albums futurs. Il ne remplace pas Cloudflare Access. L'application ne comporte aucun jeton administrateur.
 
-## Fonctionnalités
+## Architecture
 
-- 24 fenêtres qui se débloquent à minuit dans le fuseau **Europe/Paris**.
-- Un contenu surprise aléatoire propre à chaque fenêtre et à chaque navigateur, conservé après rechargement.
-- Bouton **Autre surprise** : nouveau tirage, sans répéter les contenus tant qu'il en reste.
-- Quiz interactifs avec réponses et explications ; références DOI lorsque des études précises sont mentionnées.
-- Progrès enregistrés localement dans le navigateur (localStorage).
-- **Mode démo** permettant de tester les 24 cases avant décembre sans ajouter de journées à la progression officielle.
-- Animation de neige et de confettis, petit carillon optionnel (désactivé initialement).
-- Responsive, utilisation au clavier, prise en charge de la réduction des animations.
-- **PWA** installable dans les navigateurs compatibles et cache hors ligne pour les fichiers essentiels.
-- **Aucun compte**, aucun service tiers pour les surprises et aucune donnée personnelle transmise à un serveur. Les polices Google sont optionnelles et chargées depuis Google lorsque la connexion l'autorise.
+- `src/worker.js` : Worker Cloudflare, API des albums, lecture des médias R2, calendrier et session démo.
+- `public/index.html`, `public/styles.css`, `public/app.js`, `public/access.js`, `public/secure-client.js`, `public/i18n.js` : interface festive, code d'invitation, galerie, changement de langue et contrôles de démo.
+- `public/surprises.js`, `public/surprises.en.js` : contenu des 47 surprises scientifiques en deux langues.
+- `public/sw.js` : cache PWA limité aux fichiers statiques, **jamais** aux routes `/api/`.
+- `wrangler.jsonc` : configuration du Worker et liaison R2 `MEDIA` avec le bucket `calendar4christmas-private`.
+- Bucket R2 (privé) : `calendar.json` à la racine et `media/m001.jpg` etc. Les clés réelles dépendent des extensions conservées dans le manifeste.
 
-## Accès temporaire par invitation
+**Aucune photo, vidéo, archive ni description privée n'est enregistrée dans GitHub**. L'objectif est de déplacer définitivement la gestion du code et des déploiements dans Cloudflare Artifacts, puis de retirer le dépôt GitHub après un déploiement indépendant vérifié.
 
-Le calendrier présente actuellement un écran d'accès festif avant d'afficher les 24 cases. Le code d'invitation convenu est vérifié par `access.js` : le mot de passe n'est pas inséré en clair dans `index.html`, et sa vérification utilise une empreinte PBKDF2-SHA256 avec sel. Une session de 12 heures est conservée dans `sessionStorage` ; un bouton **Verrouiller** permet de revenir à l'accueil. Un délai de 30 secondes est appliqué après cinq erreurs consécutives, uniquement dans la page.
-
-**Attention : ce n'est qu'un contrôle de présentation côté navigateur, pas un contrôle d'accès sécurisé.** Le dépôt et les fichiers GitHub Pages restent publics et peuvent être lus directement, y compris `surprises.js`, les éventuelles photos statiques et l'empreinte du code. Une personne connaissant les outils de développement peut contourner l'écran, ou attaquer le code hors ligne. Aucune photo privée/confidentielle ne doit être déposée dans ce dépôt public en supposant qu'elle restera secrète.
-
-Pour rendre les photos réellement privées avant la date prévue : utiliser un hébergement de fichiers privé, un serveur validant l'accès et une API qui livre seulement les images autorisées pour la journée. L'écran actuel peut être conservé comme présentation festive, mais n'assure pas cette sécurité.
-
-## Lancer en local
-
-Pas de compilation ni de dépendance npm.
+## Installation et validation
 
 ```bash
-python -m http.server 8080
+npm install
+npm run check
+npm test
+npm run deploy
 ```
 
-Ouvrir [http://localhost:8080](http://localhost:8080). On peut également ouvrir `index.html` directement, mais un serveur local est recommandé pour le service worker.
+Les tests couvrent notamment l'accès aux albums, le verrouillage normal avant décembre, l'activation démo avec `triche`, le rejet d'un mauvais code, la sortie du mode démo et les traductions de l'interface.
 
-## Publication GitHub Pages
+## Publication
 
-Le workflow [pages.yml](.github/workflows/pages.yml) est déclenché à chaque push sur `main`.
+Le projet Cloudflare Workers s'appelle **calendar4christmas** et conserve l'adresse :
 
-1. Dans GitHub : **Settings → Pages → Build and deployment → Source : GitHub Actions**.
-2. Vérifier l'onglet **Actions**, workflow « Deploy Calendar4Christmas to GitHub Pages ».
-3. Consulter **https://lucper01.github.io/Calendar4Christmas/** après la publication.
+`https://calendar4christmas.lperroquin.workers.dev/`
 
-Si Pages n'était pas encore activé lors du premier push, relancer le workflow avec **Run workflow** une fois la source configurée.
+L'accès à `/api/health` doit indiquer `worker:true`, `r2Bound:true` et `storageReady:true` après la mise en place de R2.
 
-## Modifier le calendrier
-
-- `surprises.js` : les 47 surprises, catégories, options de quiz, bonnes réponses et liens DOI.
-- `app.js` : calendrier, logique de déblocage, tirages, sauvegarde et interactions.
-- `styles.css` : palette, design, animations et responsive.
-- `index.html` : structure de la page.
-- `assets/favicon.svg` : icône et logo simplifié.
-- `sw.js` : cache PWA ; **augmenter la version** de `CACHE` lors de changements majeurs.
-
-Les contenus sont des vulgarisations ou des jeux : ils ne remplacent pas une lecture critique des sources primaires.
-
-## Notes techniques
-
-- L'ouverture par date dépend de l'horloge du navigateur : **ce n'est pas une sécurité côté serveur**. Les visiteurs peuvent manipuler leur horloge ou les données locales.
-- La progression est propre à chaque navigateur/appareil et peut disparaître si les données du site sont effacées ; elle n'est pas synchronisée.
-- Le mode démo sert aux tests. Le choix des surprises peut être conservé localement, mais l'ouverture anticipée n'incrémente pas les journées officiellement découvertes.
-- Édition actuellement figée sur **2026** ; pour réutiliser le projet en 2027, adapter l'année, les cibles UTC de décembre et les clés de stockage.
-- Code statique en HTML, CSS et JavaScript natifs, sans backend et sans dépendances npm.
+Voir aussi le [guide Cloudflare](docs/CLOUDFLARE_MEDIA_GUIDE.md).
 
 ## Licence
 
-Projet personnel ; aucune licence de redistribution n'est accordée par défaut.
+Projet personnel. Aucune licence de redistribution n'est accordée par défaut.
