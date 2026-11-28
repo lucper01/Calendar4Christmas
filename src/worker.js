@@ -13,16 +13,38 @@ const ID = /^m[0-9]{3}$/;
 const DEMO_COOKIE = "c4c_demo";
 const DEMO_CODE = "triche";
 const DEMO_SESSION_SECONDS = 2 * 60 * 60;
-function demoEnabled(request) {
-  // Demo access is for testing, not a second security boundary.
-  // Cloudflare Access must remain enabled for every Worker route.
-  return (request.headers.get("Cookie") || "").split(";")
-    .some(part => part.trim() === DEMO_COOKIE + "=1");
+// Signed short-lived preview cookie: never trust a raw c4c_demo=1 cookie.
+// DEMO_SIGNING_KEY is an optional Cloudflare Worker secret for rotation/hardening;
+// the fallback supports the existing no-extra-configuration deployment, but Access
+// must remain the actual protection for personal photographs and administration.
+const encoder=new TextEncoder();
+async function demoSignature(expires,env) {
+  const secret=env.DEMO_SIGNING_KEY||"Calendar4Christmas/demo/"+DEMO_CODE+"/v2";
+  const key=await crypto.subtle.importKey("raw",encoder.encode(secret),
+    {name:"HMAC",hash:"SHA-256"},false,["sign"]);
+  const signature=new Uint8Array(await crypto.subtle.sign("HMAC",key,encoder.encode(String(expires))));
+  return [...signature].map(n=>n.toString(16).padStart(2,"0")).join("");
 }
-function demoCookie(enabled) {
-  return DEMO_COOKIE + "=" + (enabled ? "1" : "")
-    + "; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age="
-    + (enabled ? DEMO_SESSION_SECONDS : 0);
+async function demoEnabled(request,env) {
+  const cookie=(request.headers.get("Cookie")||"").split(";")
+    .map(x=>x.trim()).find(x=>x.startsWith(DEMO_COOKIE+"="));
+  if(!cookie)return false;
+  const value=cookie.slice((DEMO_COOKIE+"=").length);
+  const parts=value.split(".");
+  if(parts.length!==2||!/^\d{10}$/.test(parts[0])||!/^[a-f0-9]{64}$/.test(parts[1]))
+    return false;
+  const expires=Number(parts[0]),now=Math.floor(Date.now()/1000);
+  if(expires<=now||expires>now+DEMO_SESSION_SECONDS)return false;
+  const expected=await demoSignature(expires,env);
+  // Compare all bytes without early exit.
+  let diff=0;for(let i=0;i<expected.length;i++)diff|=expected.charCodeAt(i)^parts[1].charCodeAt(i);
+  return diff===0;
+}
+async function demoCookie(enabled,env) {
+  const expires=Math.floor(Date.now()/1000)+DEMO_SESSION_SECONDS;
+  const value=enabled?expires+"."+(await demoSignature(expires,env)):"";
+  return DEMO_COOKIE+"="+value+"; Path=/; Secure; HttpOnly; SameSite=Strict; Max-Age="
+    +(enabled?DEMO_SESSION_SECONDS:0);
 }
 const PUBLIC_FILES = new Set([
   "/", "/index.html", "/styles.css", "/access.js", "/app.js", "/i18n.js",
@@ -100,16 +122,14 @@ function publicAlbum(data,entry) {
     media:entry.media.map(id=>mediaById(data,id))
       .filter(Boolean).map(x=>({id:x.id,type:x.type,caption:x.caption||"",alt:x.alt||""}))};
 }
-function mediaInReleasedDay(data,id,request){
-  return data?.days.some(d=>
-    (released(d.day)||demoEnabled(request)) && d.media.includes(id)
-  )===true;
+function mediaInReleasedDay(data,id){
+  return data?.days.some(d=>released(d.day)&&d.media.includes(id))===true;
 }
 async function streamMedia(request,env,id) {
   if(!ID.test(id))return error(404,"Fichier introuvable.");
   const data=await loadManifest(env);
   const item=mediaById(data,id);
-  if(!item || !(demoEnabled(request)||mediaInReleasedDay(data,id,request)))return error(404,"Fichier indisponible.");
+  if(!item || !((await demoEnabled(request,env))||mediaInReleasedDay(data,id)))return error(404,"Fichier indisponible.");
   const ext=Object.values(allowedTypes).find(x=>item.filename.toLowerCase().endsWith(x))
     || (/\.jpeg$/i.test(item.filename)?".jpeg":null);
   if(!ext)return error(415,"Extension inconnue.");
@@ -182,7 +202,7 @@ function validateManifest(data){
   return null;
 }
 async function adminApi(request,env,path,method,calendar){
-  if(!demoEnabled(request))return error(403,"Active le mode démo avec le code requis.");
+  if(!(await demoEnabled(request,env)))return error(403,"Active le mode démo avec le code requis.");
   if(!env.MEDIA)return error(503,"Stockage R2 indisponible.");
   if(path==="/api/admin/calendar" && method==="GET")
     return calendar?send({ok:true,manifest:calendar}):error(404,"Manifeste absent.");
@@ -250,10 +270,10 @@ async function adminApi(request,env,path,method,calendar){
 async function api(request,env) {
   const path=new URL(request.url).pathname,method=request.method;
   if(path==="/api/demo"){
-    if(method==="GET")return send({ok:true,demo:demoEnabled(request)});
+    if(method==="GET")return send({ok:true,demo:await demoEnabled(request,env)});
     if(method==="DELETE"){
       if(!originOk(request))return error(403,"Origine non autorisée.");
-      return send({ok:true,demo:false},200,{"Set-Cookie":demoCookie(false)});
+      return send({ok:true,demo:false},200,{"Set-Cookie":await demoCookie(false,env)});
     }
     if(method==="POST"){
       if(!originOk(request))return error(403,"Origine non autorisée.");
@@ -263,7 +283,7 @@ async function api(request,env) {
       let value;try{value=JSON.parse(content);}catch{return error(400,"Code démo requis.");}
       if(typeof value?.code!=="string"||value.code.trim().toLowerCase()!==DEMO_CODE)
         return error(401,"Code démo incorrect.");
-      return send({ok:true,demo:true},200,{"Set-Cookie":demoCookie(true)});
+      return send({ok:true,demo:true},200,{"Set-Cookie":await demoCookie(true,env)});
     }
     return error(405,"Méthode non autorisée.");
   }
@@ -273,17 +293,18 @@ async function api(request,env) {
   const calendar=await loadManifest(env);
   if(path.startsWith("/api/admin/"))return adminApi(request,env,path,method,calendar);
   if(path==="/api/calendar"&&method==="GET"){
-    return send({ok:true,ready:Boolean(calendar),year:YEAR,demo:demoEnabled(request),
+    const preview=await demoEnabled(request,env);
+    return send({ok:true,ready:Boolean(calendar),year:YEAR,demo:preview,
       days:calendar?calendar.days.map(d=>({
-        day:d.day,type:"album",available:released(d.day)||demoEnabled(request),
-        count:(released(d.day)||demoEnabled(request))?d.media.length:0,
-        ...(released(d.day)||demoEnabled(request)?{title:d.title}:{})
+        day:d.day,type:"album",available:released(d.day)||preview,
+        count:(released(d.day)||preview)?d.media.length:0,
+        ...(released(d.day)||preview?{title:d.title}:{})
       })):[]});
   }
   const dayMatch=/^\/api\/day\/(\d{1,2})$/.exec(path);
   if(dayMatch&&method==="GET"){
     const day=Number(dayMatch[1]);
-    if(day<1||day>24||!(released(day)||demoEnabled(request)))return error(403,"Case verrouillée.");
+    if(day<1||day>24||!(released(day)||(await demoEnabled(request,env))))return error(403,"Case verrouillée.");
     const entry=entryFor(calendar,day);
     return entry?send({ok:true,...publicAlbum(calendar,entry)}):error(404,"Case introuvable.");
   }
