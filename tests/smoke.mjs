@@ -44,6 +44,8 @@ const dateParts=Object.fromEntries(new Intl.DateTimeFormat("en-GB",{
 const released=dateParts.year>2026||(dateParts.year===2026&&dateParts.month===12&&dateParts.day>=1);
 assert.equal((await call("/api/day/1")).status,released?200:403);
 assert.equal((await call("/api/admin/calendar")).status,403);
+assert.equal((await call("/api/admin/calendar",{headers:{"Cookie":"c4c_demo=1"}})).status,403);
+assert.equal((await call("/api/admin/calendar",{headers:{"Cookie":"c4c_demo=9999999999."+("0".repeat(64))}})).status,403);
 assert.equal((await json("/api/demo","POST",{code:"incorrect"})).status,401);
 const enabled=await json("/api/demo","POST",{code:"triche"});
 assert.equal(enabled.status,200);
