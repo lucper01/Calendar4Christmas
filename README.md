@@ -1,29 +1,49 @@
-# Calendar4Christmas - Le labo de Noël
+# Calendar4Christmas - Calendrier de l'Avent du laboratoire
 
-Un calendrier de l'Avent scientifique et photographique pour décembre **2026**, hébergé par Cloudflare Workers. Il comprend 24 cases : **21 albums photo/vidéo** stockés dans **Cloudflare R2**, et **3 cases de surprises scientifiques**. L'interface et les 47 contenus scientifiques disponibles pour les cases non photographiques sont bilingues **FR / EN**.
+Projet déployé sur Cloudflare Workers + Cloudflare R2, avec **24 journées** composées chacune d'une **photo ou galerie de photos/vidéos** et d'une **surprise scientifique**. Le site fonctionne en français et en anglais.
 
-## Accès et mode de vérification
+## Accès et administration
 
-- **Cloudflare Access** protège le domaine Workers. Les API et médias doivent rester couverts par cette politique, y compris `/api/*`.
-- Un écran d'invitation supplémentaire utilise le code transmis aux invités, contrôlé côté navigateur par une empreinte PBKDF2. Il n'est **pas** un mécanisme de sécurité suffisant à lui seul.
-- Le bouton **Mode démo** ouvre une fenêtre demandant le code **triche**. Une fois validé par le Worker, il donne accès **aux 24 cases immédiatement, y compris tous les albums et vidéos R2**, sans attendre leurs dates.
-- Le Worker active une session démo limitée à **2 heures** via un cookie `HttpOnly; Secure; SameSite=Strict`. Le bouton **Quitter la démo** supprime ce cookie. La session expire également à la fermeture du navigateur si le cookie de session est supprimé.
-- Hors démo, les images et vidéos de chaque jour ne sont accessibles qu'après la date correspondante selon le fuseau **Europe/Paris**, contrôlé par le Worker. La progression officielle n'est pas augmentée par les ouvertures anticipées en démo.
+- Cloudflare Access : protection du domaine Workers et de l'intégralité des routes `/api/*`.
+- Écran d'invitation du calendrier : code d'accès habituel, côté navigateur.
+- **Mode démo** : saisie du code de démonstration convenu dans le Worker, donnant immédiatement accès aux 24 jours, photos, vidéos et quiz, avant leur date réelle.
+- **Administration** : un lien apparaît dans le calendrier lorsque le mode démo est actif. La même session démo permet d'ouvrir `/admin.html`, sans code ni jeton administrateur distinct.
+- Le Worker émet un cookie de prévisualisation HMAC signé, `HttpOnly`, `Secure`, `SameSite=Strict`, valable 2 heures. Il peut facultativement utiliser un secret `DEMO_SIGNING_KEY` stocké dans Cloudflare pour améliorer la gestion de la signature, sans être un code de connexion utilisateur.
 
-**Important :** `triche` est un code de vérification partagé, **pas une protection confidentielle** ; une personne qui le connaît et dispose de l'accès Cloudflare pourra consulter les albums futurs. Il ne remplace pas Cloudflare Access. L'application ne comporte aucun jeton administrateur.
+**Limite importante :** toute personne autorisée par Cloudflare Access et connaissant le code démo peut aussi modifier le calendrier. C'est le fonctionnement demandé pour un usage privé ; le code démo ne constitue pas un dispositif d'autorisation administrateur robuste. Cloudflare Access doit rester actif. Aucun secret ni média personnel ne doit être ajouté au dépôt public.
 
-## Architecture
+## L'administration
 
-- `src/worker.js` : Worker Cloudflare, API des albums, lecture des médias R2, calendrier et session démo.
-- `public/index.html`, `public/styles.css`, `public/app.js`, `public/access.js`, `public/secure-client.js`, `public/i18n.js` : interface festive, code d'invitation, galerie, changement de langue et contrôles de démo.
-- `public/surprises.js`, `public/surprises.en.js` : contenu des 47 surprises scientifiques en deux langues.
-- `public/sw.js` : cache PWA limité aux fichiers statiques, **jamais** aux routes `/api/`.
-- `wrangler.jsonc` : configuration du Worker et liaison R2 `MEDIA` avec le bucket `calendar4christmas-private`.
-- Bucket R2 (privé) : `calendar.json` à la racine et `media/m001.jpg` etc. Les clés réelles dépendent des extensions conservées dans le manifeste.
+La page `/admin.html` permet :
 
-**Aucune photo, vidéo, archive ni description privée n'est enregistrée dans GitHub**. L'objectif est de déplacer définitivement la gestion du code et des déploiements dans Cloudflare Artifacts, puis de retirer le dépôt GitHub après un déploiement indépendant vérifié.
+- de choisir un jour parmi les 24 ;
+- de répartir librement les photos, vidéos et albums ; de les déplacer, réordonner, retirer de chaque jour ou réutiliser sur plusieurs jours ;
+- d'ajouter des médias à la bibliothèque R2 depuis le navigateur, un par un (JPEG, PNG, WebP, MP4 ; maximum 24 Mio par fichier) ;
+- de renseigner titres, descriptions et légendes dans les deux langues ;
+- de proposer chaque jour **une surprise scientifique automatique**, **une information personnalisée** ou **un quiz personnalisé** (2 à 4 réponses, choix correct, explication) ;
+- d'enregistrer directement le calendrier dans R2, sans déploiement supplémentaire ;
+- de vérifier la présence des fichiers dans R2.
 
-## Installation et validation
+Le bouton **Enregistrer** persiste l'organisation des 24 journées. L'import d'une nouvelle photo la met dans la médiathèque ; elle est ensuite attribuable à un jour.
+
+### Migration de l'ancien calendrier
+
+La version précédente contenait 21 journées photographiques et 3 journées scientifiques. Le Worker convertit automatiquement l'ancien fichier `calendar.json` au format **24 journées photographiques + bonus quotidien** et répartit trois médias des albums les plus fournis sur les trois derniers jours. Aucun média n'est supprimé ou déplacé physiquement dans R2. La première sauvegarde depuis l'administration enregistre durablement cette nouvelle organisation.
+
+Les nouvelles photos sélectionnées dans l'administration sont stockées directement dans R2 (pas dans le dépôt GitHub).
+
+## Organisation Cloudflare
+
+- `src/worker.js` : API des 24 journées, des photos, des bonus et de l'administration ;
+- `public/index.html`, `public/app.js`, `public/secure-client.js` : calendrier et galerie ;
+- `public/admin.html`, `public/admin.js`, `public/admin.css` : interface d'édition ;
+- `public/surprises.js`, `public/surprises.en.js` : 47 surprises scientifiques possibles pour le bonus automatique ;
+- `public/i18n.js` : sélection FR/EN ;
+- `wrangler.jsonc` : déploiement Worker et liaison `MEDIA` au bucket privé `calendar4christmas-private`.
+
+Les photos sont dans R2 aux clés `media/m001.jpg`, etc. Le fichier `calendar.json` est placé à la racine du bucket. Les routes `/api/media/*` contrôlent les dates de publication, sauf en mode démo.
+
+## Développement et contrôle
 
 ```bash
 npm install
@@ -32,17 +52,7 @@ npm test
 npm run deploy
 ```
 
-Les tests couvrent notamment l'accès aux albums, le verrouillage normal avant décembre, l'activation démo avec `triche`, le rejet d'un mauvais code, la sortie du mode démo et les traductions de l'interface.
-
-## Publication
-
-Le projet Cloudflare Workers s'appelle **calendar4christmas** et conserve l'adresse :
-
-`https://calendar4christmas.lperroquin.workers.dev/`
-
-L'accès à `/api/health` doit indiquer `worker:true`, `r2Bound:true` et `storageReady:true` après la mise en place de R2.
-
-Voir aussi le [guide Cloudflare](docs/CLOUDFLARE_MEDIA_GUIDE.md).
+Le projet conserve le déploiement intermédiaire via GitHub jusqu'au transfert définitif du code dans Cloudflare Artifacts. **Ne pas supprimer GitHub avant d'avoir vérifié un déploiement indépendant du dépôt.**
 
 ## Licence
 
