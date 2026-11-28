@@ -1,0 +1,21 @@
+name: Calendar demo triche checks
+on:
+  push:
+    branches: [feature/demo-triche-full-preview]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Validate JavaScript and Worker
+        run: npm run check
+      - name: Verify demo access, R2 media and locale
+        run: npm test
