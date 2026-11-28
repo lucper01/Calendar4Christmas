@@ -63,6 +63,51 @@
     image.alt=localized(item.alt)||t("image_alt");
     return image;
   }
+  function scienceBonus(day){
+    const source=Array.isArray(window.SURPRISES)?window.SURPRISES:[];
+    if(!source.length)return {type:"info",title:{fr:"À découvrir",en:"Discover"},
+      body:{fr:"Une petite surprise scientifique quotidienne.",en:"A small daily science surprise."}};
+    const index=((day*17+5)%source.length);
+    const base=source[index];
+    const translation=window.C4C_I18N?.lang==="en"?window.C4C_SURPRISES_EN?.[index]:null;
+    return {...base,...(translation||{}),type:base.type==="quiz"?"quiz":"info",
+      title:translation?.title||base.title,body:translation?.body||base.body,
+      question:translation?.question||translation?.body||base.body};
+  }
+  function renderBonus(day){
+    const area=make("section","daily-bonus");
+    const label=make("div","daily-bonus-eyebrow",t("daily_bonus"));
+    area.append(label);
+    const isDefault=!currentAlbum?.bonus||currentAlbum.bonus.type==="surprise";
+    const bonus=isDefault?scienceBonus(day):currentAlbum.bonus;
+    if(bonus.type==="quiz"){
+      const question=localized(bonus.question)||bonus.body||bonus.title||t("quiz");
+      area.append(make("h3","daily-bonus-heading",question));
+      const opts=isDefault?bonus.options||[]:bonus.options?.[window.C4C_I18N?.lang||"fr"]||bonus.options?.fr||[];
+      const container=make("div","daily-bonus-options");
+      const exp=make("p","daily-bonus-explanation");
+      exp.hidden=true;
+      opts.forEach((value,index)=>{
+        const button=make("button","daily-bonus-choice",String.fromCharCode(65+index)+". "+value);
+        button.type="button";
+        button.addEventListener("click",()=>{
+          container.querySelectorAll("button").forEach((node,i)=>{
+            node.disabled=true;
+            node.classList.add(i===bonus.correctIndex||i===bonus.correct?"is-correct":i===index?"is-wrong":"is-muted");
+          });
+          exp.textContent=localized(bonus.explanation) || bonus.explanation || "";
+          exp.hidden=!exp.textContent;
+        });
+        container.append(button);
+      });
+      area.append(container,exp);
+    }else{
+      area.append(make("h3","daily-bonus-heading",localized(bonus.title)||bonus.title||t("science")));
+      const detail=localized(bonus.body)||bonus.body||"";
+      if(detail)area.append(make("p","daily-bonus-text",detail));
+    }
+    return area;
+  }
   function showSlide() {
     if(!currentAlbum)return;
     const gallery=$("album-gallery");
@@ -88,6 +133,7 @@
       gallery.append(controls);
     }
     gallery.append(make("p","album-media-type",item.type==="video"?t("video_label"):t("photo_label")));
+    gallery.append(renderBonus(currentAlbum.day));
   }
   function render() {
     if(!currentAlbum)return;
