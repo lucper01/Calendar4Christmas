@@ -76,3 +76,8 @@
 
 /* Honor the native hidden attribute despite author display rules. */
 .admin-workspace[hidden],.admin-locked[hidden],.admin-extra-fields[hidden]{display:none!important}
+
+.admin-caption-fields{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:0 4px 6px}
+.admin-caption-fields label{font-size:10px!important}
+.admin-caption-fields input{min-height:34px!important;padding:6px 8px!important;font-size:11px!important}
+@media(max-width:460px){.admin-caption-fields{grid-template-columns:1fr}}
